@@ -107,9 +107,9 @@ void prosystem_ExecuteFrame(const byte* input) {
       }
     }
     tia_Process(2);
-    if(cartridge_pokey) {
+    //if(cartridge_pokey) {
       pokey_Process(2);
-    }
+    //}
   }
   prosystem_frame++;
   if(prosystem_frame >= prosystem_frequency) {

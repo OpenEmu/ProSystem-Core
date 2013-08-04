@@ -294,7 +294,7 @@ static void sound_Store() {
     sound_Resample(tia_buffer, sample, length);
     
     // Ballblazer, Commando
-    if(cartridge_pokey) {
+    //if(cartridge_pokey) {
         byte pokeySample[MAX_BUFFER_SIZE];
         memset( pokeySample, 0, MAX_BUFFER_SIZE );
         sound_Resample(pokey_buffer, pokeySample, length);
@@ -302,7 +302,7 @@ static void sound_Store() {
             sample[index] += pokeySample[index];
             sample[index] = sample[index] / 2;
         }
-    }
+    //}
     
     // Convert 8u to 16s
     for(int i = 0; i != length; i ++)
