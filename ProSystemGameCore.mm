@@ -196,6 +196,11 @@ static void display_ResetPalette32( ) {
     return 48000;
 }
 
+- (NSUInteger)audioBitDepth
+{
+    return 8;
+}
+
 #pragma mark Input
 // ----------------------------------------------------------------------------
 // SetInput
@@ -303,15 +308,15 @@ static void sound_Store() {
             sample[index] = sample[index] / 2;
         }
     //}
-    
+    [[current ringBufferAtIndex:0] write:sample maxLength:length];
     // Convert 8u to 16s
-    for(int i = 0; i != length; i ++)
-    {
-        int16_t sample16 = (sample[i] << 8) - 32768;
-        int16_t frame[2] = {sample16, sample16};
-        
-        [[current ringBufferAtIndex:0] write:frame maxLength:2];
-    }
+//    for(int i = 0; i != length; i ++)
+//    {
+//        int16_t sample16 = (sample[i] << 8) - 32768;
+//        int16_t frame[2] = {sample16, sample16};
+//        
+//        [[current ringBufferAtIndex:0] write:frame maxLength:2];
+//    }
 }
 
 @end
