@@ -78,7 +78,7 @@ static void display_ResetPalette32( ) {
 
 #pragma mark Execution
 
-- (BOOL)loadFileAtPath:(NSString *)path
+- (BOOL)loadFileAtPath:(NSString *)path error:(NSError **)error
 {
     if(cartridge_Load([path UTF8String])) {
 	    //sound_Stop( );
