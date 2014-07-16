@@ -192,7 +192,7 @@ bool cartridge_Load(std::string filename) {
   
   byte* data = NULL;
   //uint size = archive_GetUncompressedFileSize(filename);
-  uint size;
+  uint size = 0;
 
   if(size == 0) {
     FILE *file = fopen(filename.c_str( ), "rb");
