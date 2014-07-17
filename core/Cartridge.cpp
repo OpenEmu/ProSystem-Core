@@ -163,6 +163,7 @@ if (cartridge_CC2(header)) {
     cartridge_ReadHeader(header);
     size -= 128;
     offset = 128;
+    cartridge_size = size;
   }
   else {
     cartridge_size = size;
