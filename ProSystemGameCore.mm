@@ -43,6 +43,7 @@
 @interface ProSystemGameCore () <OE7800SystemResponderClient>
 {
     uint32_t *videoBuffer;
+    int videoWidth, videoHeight;
     uint display_palette32[256];
     byte keyboard_data[19];
 }
@@ -65,6 +66,8 @@ static void display_ResetPalette32( ) {
     if((self = [super init]))
     {
         videoBuffer = (uint32_t *)malloc(320 * 292 * 4);
+        videoWidth  = 320;
+        videoHeight = 240;
         current = self;
     }
     
@@ -120,23 +123,23 @@ static void display_ResetPalette32( ) {
 {
 	prosystem_ExecuteFrame(keyboard_data); //wants input
     
-    uint height = maria_visibleArea.GetHeight( );
-    uint length = maria_visibleArea.GetLength( );
+    current->videoWidth  = maria_visibleArea.GetLength();
+    current->videoHeight = maria_visibleArea.GetHeight();
     
     const byte* buffer = maria_surface + ((maria_visibleArea.top - maria_displayArea.top) * maria_visibleArea.GetLength( ));
     
     uint* surface = (uint*)videoBuffer;
     //uint pitch = 320 >> 2; // should be Distance, in bytes, to the start of next line.
     uint pitch = 320;
-    for(uint indexY = 0; indexY < height; indexY++) {
-        for(uint indexX = 0; indexX < length; indexX += 4) {
+    for(uint indexY = 0; indexY < current->videoHeight; indexY++) {
+        for(uint indexX = 0; indexX < current->videoWidth; indexX += 4) {
             surface[indexX + 0] = display_palette32[buffer[indexX + 0]];
             surface[indexX + 1] = display_palette32[buffer[indexX + 1]];
             surface[indexX + 2] = display_palette32[buffer[indexX + 2]];
             surface[indexX + 3] = display_palette32[buffer[indexX + 3]];
         }
         surface += pitch;
-        buffer += length;
+        buffer += current->videoWidth;
     }
     
     sound_Store();
@@ -151,12 +154,12 @@ static void display_ResetPalette32( ) {
 
 - (OEIntRect)screenRect
 {
-    return OEIntRectMake(0, 0, 320, 240);
+    return OEIntRectMake(0, 0, current->videoWidth, current->videoHeight);
 }
 
 - (OEIntSize)bufferSize
 {
-    return OEIntSizeMake(320, 240);
+    return OEIntSizeMake(320, 292);
 }
 
 - (const void *)videoBuffer
@@ -181,7 +184,7 @@ static void display_ResetPalette32( ) {
 
 - (NSTimeInterval)frameInterval
 {
-    return 60;
+    return cartridge_region == REGION_NTSC ? 60 : 50;
 }
 
 #pragma mark Audio
