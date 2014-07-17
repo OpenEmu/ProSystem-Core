@@ -66,7 +66,7 @@ static void maria_StoreCell(byte data) {
 static void maria_StoreCell(byte high, byte low) {
   if(maria_horizontal < MARIA_LINERAM_SIZE) {
     if(low || high) {
-      maria_lineRAM[maria_horizontal] = maria_palette & 16 | high | low;
+      maria_lineRAM[maria_horizontal] = (maria_palette & 16) | high | low;
     }
     else { 
       byte kmode = memory_ram[CTRL] & 4;
