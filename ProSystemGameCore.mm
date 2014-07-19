@@ -228,17 +228,59 @@ static void display_ResetPalette32( ) {
 // | 15       | Console      | Left Difficulty
 // | 16       | Console      | Right Difficulty
 // +----------+--------------+-------------------------------------------------
-const int ProSystemMap[] = { 3, 2, 1, 0, 4, 5}; // fix for Joystick 2 and the console buttons
+const int ProSystemMap[] = { 3, 2, 1, 0, 4, 5, 9, 8, 7, 6, 10, 11, 13, 14, 12, 15, 16};
 - (oneway void)didPush7800Button:(OE7800Button)button forPlayer:(NSUInteger)player;
 {
-    //keyboard_data[player-1] |= 1 << ProSystemMap[button];
-    keyboard_data[ProSystemMap[button]] = 1;
+    int playerShift = player != 1 ? 6 : 0;
+    
+    switch (button) {
+        case OE7800ButtonUp:
+        case OE7800ButtonDown:
+        case OE7800ButtonLeft:
+        case OE7800ButtonRight:
+        case OE7800ButtonFire1:
+        case OE7800ButtonFire2:
+            keyboard_data[ProSystemMap[button + playerShift]] = 1;
+            break;
+        
+        case OE7800ButtonSelect:
+        case OE7800ButtonPause:
+        case OE7800ButtonReset:
+        case OE7800ButtonLeftDiff:
+        case OE7800ButtonRightDiff:
+            keyboard_data[ProSystemMap[button + 6]] = 1;
+            break;
+            
+        default:
+            break;
+    }
 }
 
 - (oneway void)didRelease7800Button:(OE7800Button)button forPlayer:(NSUInteger)player;
 {
-    //keyboard_data[player-1] &= ~(1 << ProSystemMap[button]);
-    keyboard_data[ProSystemMap[button]] = 0;
+    int playerShift = player != 1 ? 6 : 0;
+    
+    switch (button) {
+        case OE7800ButtonUp:
+        case OE7800ButtonDown:
+        case OE7800ButtonLeft:
+        case OE7800ButtonRight:
+        case OE7800ButtonFire1:
+        case OE7800ButtonFire2:
+            keyboard_data[ProSystemMap[button + playerShift]] = 0;
+            break;
+            
+        case OE7800ButtonSelect:
+        case OE7800ButtonPause:
+        case OE7800ButtonReset:
+        case OE7800ButtonLeftDiff:
+        case OE7800ButtonRightDiff:
+            keyboard_data[ProSystemMap[button + 6]] = 0;
+            break;
+            
+        default:
+            break;
+    }
 }
 
 - (BOOL)saveStateToFileAtPath:(NSString *)fileName
