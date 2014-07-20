@@ -23,7 +23,7 @@
 	<key>OEGameCoreClass</key>
 	<string>ProSystemGameCore</string>
 	<key>OEGameCorePlayerCount</key>
-	<string>1</string>
+	<string>2</string>
 	<key>OEProjectURL</key>
 	<string>http://home.comcast.net/~gscottstanton/</string>
 	<key>OESystemIdentifiers</key>
