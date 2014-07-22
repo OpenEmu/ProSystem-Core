@@ -34,6 +34,8 @@ typedef unsigned int uint;
 
 extern void riot_Reset(void);
 extern void riot_SetInput(const byte* input);
+extern void riot_SetDRA(byte data);
+extern void riot_SetDRB(byte data);
 extern void riot_SetTimer(word timer, byte intervals);
 extern void riot_UpdateTimer(byte cycles);
 extern bool riot_timing;

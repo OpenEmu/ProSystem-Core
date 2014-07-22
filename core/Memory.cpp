@@ -68,6 +68,7 @@ byte memory_Read(word address) {
 // Write
 // ----------------------------------------------------------------------------
 void memory_Write(word address, byte data) {
+
   if(!memory_rom[address]) {
     switch(address) {
       case WSYNC:
@@ -113,10 +114,13 @@ void memory_Write(word address, byte data) {
       case AUDV1:
         tia_SetRegister(AUDV1, data);
         break;
-      case SWCHB:
-        break;
-      case CTLSWB:
-        break;
+	  case SWCHA:	/*gdement:  Writing here actually writes to DRA inside the RIOT chip.
+					This value only indirectly affects output of SWCHA.  Ditto for SWCHB.*/
+		riot_SetDRA(data);
+		break;
+	  case SWCHB:
+		riot_SetDRB(data);
+		break;
       case TIM1T:
       case TIM1T | 0x8:
         riot_SetTimer(TIM1T, data);
@@ -148,6 +152,7 @@ void memory_Write(word address, byte data) {
           memory_ram[address + 8192] = data;
         }
         break;
+	/*TODO: gdement:  test here for debug port.  Don't put it in the switch because that will change behavior.*/
     }
   }
   else {
