@@ -135,8 +135,7 @@ static void cartridge_ReadHeader(const byte* header) {
     }
   }
   
-  //cartridge_pokey = (header[54] & 1)? true: false;
-  cartridge_pokey = true;
+  cartridge_pokey = (header[54] & 1)? true: false;
   cartridge_controller[0] = header[55];
   cartridge_controller[1] = header[56];
   cartridge_region = header[57];
@@ -325,8 +324,7 @@ void cartridge_Write(word address, byte data) {
       break;
   }
 
-  //if(cartridge_pokey && address >= 0x4000 && address < 0x4009) {
-  if(address >= 0x4000 && address < 0x4009) {
+  if(cartridge_pokey && address >= 0x4000 && address < 0x4009) {
     switch(address) {
       case POKEY_AUDF1:
         pokey_SetRegister(POKEY_AUDF1, data);
