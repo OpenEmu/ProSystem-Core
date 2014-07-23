@@ -61,6 +61,7 @@ bool database_Load(std::string digest) {
         for(int index = 0; index < 7; index++) {
           fgets(buffer, 256, file);
           entry[index] = common_Remove(buffer, '\n');  
+          entry[index] = common_Remove(entry[index], '\r');
         }
         
         cartridge_title = database_GetValue(entry[0]);

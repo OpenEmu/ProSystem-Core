@@ -136,27 +136,8 @@ std::string common_Trim(std::string target) {
 // Remove
 // ----------------------------------------------------------------------------
 std::string common_Remove(std::string target, char value) {
-  int length = 0;
-  int index;
-  for(index = 0; index < target.size( ); index++) {
-    if(target[index] != value) {
-      length++;
-    }
-  }
-  
-  char* buffer = new char[length + 1];
-  int count = 0;
-  for(index = 0; index < target.size( ); index++) {
-    if(target[index] != value) {
-      buffer[count] = target[index];
-      count++;
-    }
-  }
-  
-  buffer[length] = 0;
-  std::string source = buffer;
-  delete[ ] buffer;
-  return source;
+  target.erase(std::remove(target.begin(), target.end(), value), target.end());
+  return target;
 }
 
 // ----------------------------------------------------------------------------
