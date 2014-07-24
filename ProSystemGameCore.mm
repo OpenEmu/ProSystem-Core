@@ -45,7 +45,7 @@
     uint32_t *videoBuffer;
     int videoWidth, videoHeight;
     uint display_palette32[256];
-    byte keyboard_data[19];
+    byte keyboard_data[17];
 }
 @end
 
@@ -83,6 +83,8 @@ static void display_ResetPalette32( ) {
 
 - (BOOL)loadFileAtPath:(NSString *)path error:(NSError **)error
 {
+    memset(keyboard_data, 0, sizeof(keyboard_data));
+    
     if(cartridge_Load([path UTF8String])) {
 	    //sound_Stop( );
 	    //display_Clear( );
@@ -246,9 +248,12 @@ const int ProSystemMap[] = { 3, 2, 1, 0, 4, 5, 9, 8, 7, 6, 10, 11, 13, 14, 12, 1
         case OE7800ButtonSelect:
         case OE7800ButtonPause:
         case OE7800ButtonReset:
+            keyboard_data[ProSystemMap[button + 6]] = 1;
+            break;
+            
         case OE7800ButtonLeftDiff:
         case OE7800ButtonRightDiff:
-            keyboard_data[ProSystemMap[button + 6]] = 1;
+            keyboard_data[ProSystemMap[button + 6]] ^= (1 << 0);
             break;
             
         default:
@@ -273,8 +278,6 @@ const int ProSystemMap[] = { 3, 2, 1, 0, 4, 5, 9, 8, 7, 6, 10, 11, 13, 14, 12, 1
         case OE7800ButtonSelect:
         case OE7800ButtonPause:
         case OE7800ButtonReset:
-        case OE7800ButtonLeftDiff:
-        case OE7800ButtonRightDiff:
             keyboard_data[ProSystemMap[button + 6]] = 0;
             break;
             
