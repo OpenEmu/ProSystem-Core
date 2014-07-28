@@ -98,11 +98,14 @@ static void display_ResetPalette32( ) {
         if (bios_Load([biosROM UTF8String]))
 		    bios_enabled = true;
         
+        NSLog(@"Headerless MD5 hash: %s", cartridge_digest.c_str());
+        NSLog(@"Header info (often wrong):\ntitle: %s\ntype: %d\nregion: %s\npokey: %s", cartridge_title.c_str(), cartridge_type, cartridge_region == REGION_NTSC ? "NTSC" : "PAL", cartridge_pokey ? "true" : "false");
+        
 	    database_Load(cartridge_digest);
 	    prosystem_Reset( );
         
         std::string title = common_Trim(cartridge_title);
-        NSLog(@"Now Loading: %@", [NSString stringWithUTF8String:title.c_str()]);
+        NSLog(@"Database info:\ntitle: %@\ntype: %d\nregion: %s\npokey: %s", [NSString stringWithUTF8String:title.c_str()], cartridge_type, cartridge_region == REGION_NTSC ? "NTSC" : "PAL", cartridge_pokey ? "true" : "false");
         
         //sound_SetSampleRate(48000);
 	    //display_ResetPalette( );
