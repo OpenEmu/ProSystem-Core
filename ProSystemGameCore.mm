@@ -85,6 +85,13 @@ static void display_ResetPalette32( ) {
 {
     memset(keyboard_data, 0, sizeof(keyboard_data));
     
+    // Difficulty switches: Left position = (B)eginner, Right position = (A)dvanced
+    // Left difficulty switch defaults to left position, "(B)eginner"
+    keyboard_data[15] = 1;
+    
+    // Right difficulty switch defaults to right position, "(A)dvanced", which fixes Tower Toppler
+    keyboard_data[16] = 0;
+    
     if(cartridge_Load([path UTF8String])) {
 	    //sound_Stop( );
 	    //display_Clear( );
