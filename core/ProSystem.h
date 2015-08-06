@@ -24,7 +24,6 @@
 // ----------------------------------------------------------------------------
 #ifndef PRO_SYSTEM_H
 #define PRO_SYSTEM_H
-//#define NULL 0
 
 #include <string>
 #include <stdio.h>
@@ -44,6 +43,11 @@ typedef unsigned char byte;
 typedef unsigned short word;
 typedef unsigned int uint;
 
+// The number of cycles per scan line
+#define CYCLES_PER_SCANLINE 454
+// The number of cycles for HBLANK
+#define HBLANK_CYCLES 136
+
 extern void prosystem_Reset( );
 extern void prosystem_ExecuteFrame(const byte* input);
 extern bool prosystem_Save(std::string filename, bool compress);
@@ -56,5 +60,6 @@ extern word prosystem_frequency;
 extern byte prosystem_frame;
 extern word prosystem_scanlines;
 extern uint prosystem_cycles;
+extern uint prosystem_extra_cycles;
 
 #endif

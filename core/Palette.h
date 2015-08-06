@@ -25,7 +25,6 @@
 #ifndef PALETTE_H
 #define PALETTE_H
 #define PALETTE_SIZE 768
-//#define NULL 0
 
 #include <string>
 #include "Logger.h"

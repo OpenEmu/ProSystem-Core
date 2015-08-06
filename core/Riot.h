@@ -41,5 +41,8 @@ extern void riot_UpdateTimer(byte cycles);
 extern bool riot_timing;
 extern word riot_timer;
 extern byte riot_intervals;
+extern byte riot_dra;
+extern byte riot_drb;
+extern word riot_clocks;
 
 #endif

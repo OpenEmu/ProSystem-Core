@@ -30,7 +30,6 @@
 #define SOUND_LATENCY_MEDIUM 3
 #define SOUND_LATENCY_HIGH 4
 #define SOUND_LATENCY_VERY_HIGH 5
-//#define NULL 0
 
 //#include <DSound.h>
 #include "Common.h"

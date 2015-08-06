@@ -53,14 +53,14 @@ bool bios_Load(std::string filename) {
       return false;
     } 
   
-    if(fseek(file, 0, SEEK_END)) {
+    if(fseek(file, 0L, SEEK_END)) {
       fclose(file);
       logger_LogError("Failed to find the end of the bios file.", BIOS_SOURCE);
       return false;
     }
   
     bios_size = ftell(file);
-    if(fseek(file, 0, SEEK_SET)) {
+    if(fseek(file, 0L, SEEK_SET)) {
       fclose(file);
       logger_LogError("Failed to find the size of the bios file.", BIOS_SOURCE);
       return false;

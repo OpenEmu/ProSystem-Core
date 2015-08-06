@@ -35,6 +35,12 @@ static byte sally_opcode;
 static pair sally_address;
 static uint sally_cycles;
 
+// Whether the last operation resulted in a half cycle. (needs to be taken
+// into consideration by ProSystem when cycle counting). This can occur when
+// a TIA or RIOT are accessed (drops to 1.19Mhz when the TIA or RIOT chips
+// are accessed)
+bool half_cycle = false;
+
 struct Flag {
   byte C;
   byte Z;
@@ -116,7 +122,7 @@ static void sally_Flags(byte data) {
 static void sally_Branch(byte branch) {
   if(branch) {
     pair temp = sally_pc;
-    sally_pc.w += (char)sally_address.b.l;
+    sally_pc.w += (signed char)sally_address.b.l;
        
     if(temp.b.h != sally_pc.b.h) {
       sally_cycles += 2;
@@ -935,6 +941,9 @@ void sally_Reset( ) {
 // ExecuteInstruction
 // ----------------------------------------------------------------------------
 uint sally_ExecuteInstruction( ) {
+  // Reset half cycle flag
+  half_cycle = false;
+
   sally_opcode = memory_Read(sally_pc.w++);
   sally_cycles = SALLY_CYCLES[sally_opcode];
   
@@ -1036,6 +1045,14 @@ uint sally_ExecuteInstruction( ) {
     case 0x24: 
       sally_ZeroPage( );
       sally_BIT( );
+      // Add a half cycle if RIOT/TIA location is accessed. We only track
+      // INPT4 since it is the only one that is accessed during the lightgun
+      // hit detection loop. This should be extended to take into consideration
+      // all RIOT and TIA accesses.
+      if( sally_address.w == INPT4 )
+      {
+        half_cycle = true;
+      }
       break;
 
     case 0x25: 

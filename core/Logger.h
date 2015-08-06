@@ -27,7 +27,6 @@
 #define LOGGER_LEVEL_DEBUG 0
 #define LOGGER_LEVEL_INFO 1
 #define LOGGER_LEVEL_ERROR 2
-//#define NULL 0
 
 #include <stdio.h>
 #include <string>

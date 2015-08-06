@@ -36,7 +36,6 @@
 #define CARTRIDGE_CONTROLLER_LIGHTGUN 2
 #define CARTRIDGE_WSYNC_MASK 2
 #define CARTRIDGE_CYCLE_STEALING_MASK 1
-//#define NULL 0
 
 #include <stdio.h>
 #include <string>
@@ -69,5 +68,14 @@ extern bool cartridge_pokey;
 extern byte cartridge_controller[2];
 extern byte cartridge_bank;
 extern uint cartridge_flags;
+
+// The x offset for the lightgun crosshair (allows per cartridge adjustments)
+extern int cartridge_crosshair_x;
+// The y offset for the lightgun crosshair (allows per cartridge adjustments)
+extern int cartridge_crosshair_y;
+// The hblank prior to DMA
+extern uint cartridge_hblank;
+// Whether the cartridge supports dual analog
+extern bool cartridge_dualanalog;
 
 #endif

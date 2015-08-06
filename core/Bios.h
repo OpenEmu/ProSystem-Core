@@ -24,7 +24,6 @@
 // ----------------------------------------------------------------------------
 #ifndef BIOS_H
 #define BIOS_H
-//#define NULL 0
 
 #include <string>
 #include "Memory.h"

@@ -37,7 +37,7 @@ static pair maria_dp;
 static pair maria_pp;
 static byte maria_horizontal;
 static byte maria_palette;
-static char maria_offset;
+static signed char maria_offset;
 static byte maria_h08;
 static byte maria_h16;
 static byte maria_wmode;
@@ -145,7 +145,7 @@ static void maria_WriteLineRAM(byte* buffer) {
   if(rmode == 0) {
     int pixel = 0;
     for(int index = 0; index < MARIA_LINERAM_SIZE; index += 4) {
-      byte color;
+      word color;
       color = maria_GetColor(maria_lineRAM[index + 0]);
       buffer[pixel++] = color;
       buffer[pixel++] = color;
@@ -205,7 +205,7 @@ static void maria_StoreLineRAM( ) {
     maria_pp.b.h = memory_ram[maria_dp.w + 2];
     
     if(mode & 31) { 
-      maria_cycles += 8;
+      maria_cycles += 8; // Maria cycles (Header 4 byte)
       maria_palette = (memory_ram[maria_dp.w + 1] & 224) >> 3;
       maria_horizontal = memory_ram[maria_dp.w + 3];
       width = memory_ram[maria_dp.w + 1] & 31;
@@ -213,7 +213,7 @@ static void maria_StoreLineRAM( ) {
       maria_dp.w += 4;
     }
     else { 
-      maria_cycles += 10;
+      maria_cycles += 12; // Maria cycles (Header 5 byte)
       maria_palette = (memory_ram[maria_dp.w + 3] & 224) >> 3;
       maria_horizontal = memory_ram[maria_dp.w + 4];
       indirect = memory_ram[maria_dp.w + 1] & 32;
@@ -226,7 +226,7 @@ static void maria_StoreLineRAM( ) {
     if(!indirect) {
       maria_pp.b.h += maria_offset;
       for(int index = 0; index < width; index++) {
-        maria_cycles += 3;
+        maria_cycles += 3; // Maria cycles (Direct graphic read)
         maria_StoreGraphic( );
       }
     }
@@ -234,14 +234,14 @@ static void maria_StoreLineRAM( ) {
       byte cwidth = memory_ram[CTRL] & 16;
       pair basePP = maria_pp;
       for(int index = 0; index < width; index++) {
-        maria_cycles += 3;
+        maria_cycles += 3; // Maria cycles (Indirect)
         maria_pp.b.l = memory_ram[basePP.w++];
         maria_pp.b.h = memory_ram[CHARBASE] + maria_offset;
         
-        maria_cycles += 6;
+        maria_cycles += 3; // Maria cycles (Indirect, 1 byte)
         maria_StoreGraphic( );
         if(cwidth) {
-          maria_cycles += 3;
+          maria_cycles += 3; // Maria cycles (Indirect, 2 bytes)
           maria_StoreGraphic( );
         }
       }
@@ -258,6 +258,17 @@ void maria_Reset( ) {
   for(int index = 0; index < MARIA_SURFACE_SIZE; index++) {
     maria_surface[index] = 0;
   }
+
+ maria_cycles = 0;
+ maria_dpp.w = 0;
+ maria_dp.w = 0;
+ maria_pp.w = 0;
+ maria_horizontal = 0;
+ maria_palette = 0;
+ maria_offset = 0;
+ maria_h08 = 0;
+ maria_h16 = 0;
+ maria_wmode = 0;
 }
 
 // ----------------------------------------------------------------------------
@@ -265,10 +276,25 @@ void maria_Reset( ) {
 // ----------------------------------------------------------------------------
 uint maria_RenderScanline( ) {
   maria_cycles = 0;
+
+  // lightgun
+  // Displays the background color when Maria is disabled (if applicable)
+//  if( ( ( memory_ram[CTRL] & 96 ) != 64 ) &&
+//      maria_scanline >= maria_visibleArea.top && 
+//      maria_scanline <= maria_visibleArea.bottom &&
+//      ( !lightgun_enabled || wii_lightgun_flash ) ) {
+//      byte bgcolor = maria_GetColor(0);
+//      byte *bgstart = maria_surface + ((maria_scanline - maria_displayArea.top) * maria_displayArea.GetLength());      
+//      for(uint index = 0; index < MARIA_LINERAM_SIZE; index++ ) {
+//        *bgstart++ = bgcolor;
+//        *bgstart++ = bgcolor;
+//      }
+//  }
+
   if((memory_ram[CTRL] & 96) == 64 && maria_scanline >= maria_displayArea.top && maria_scanline <= maria_displayArea.bottom) {
-    maria_cycles += 31;
+    maria_cycles += 5; // Maria cycles (DMA Startup)
     if(maria_scanline == maria_displayArea.top) {
-      maria_cycles += 7;
+      maria_cycles += 10; // Maria cycles (End of VBLANK)
       maria_dpp.b.l = memory_ram[DPPL];
       maria_dpp.b.h = memory_ram[DPPH];
       maria_h08 = memory_ram[maria_dpp.w] & 32;
@@ -277,6 +303,7 @@ uint maria_RenderScanline( ) {
       maria_dp.b.l = memory_ram[maria_dpp.w + 2];
       maria_dp.b.h = memory_ram[maria_dpp.w + 1];
       if(memory_ram[maria_dpp.w] & 128) {
+        maria_cycles += 20; // Maria cycles (NMI)  /*29, 16, 20*/
         sally_ExecuteNMI( );
       }
     }
@@ -289,13 +316,19 @@ uint maria_RenderScanline( ) {
       maria_StoreLineRAM( );
       maria_offset--;
       if(maria_offset < 0) {
+        maria_cycles += 10; // Maria cycles (Last line of zone) /*20*/
         maria_dpp.w += 3;
         maria_h08 = memory_ram[maria_dpp.w] & 32;
         maria_h16 = memory_ram[maria_dpp.w] & 64;
         maria_offset = memory_ram[maria_dpp.w] & 15;
         if(memory_ram[maria_dpp.w] & 128) {
+          maria_cycles += 20; // Maria cycles (NMI) /*29, 16, 20*/
           sally_ExecuteNMI( );
         }
+      }
+      else
+      {
+        maria_cycles += 4; // Maria cycles (Other lines of zone)
       }
     }    
   }

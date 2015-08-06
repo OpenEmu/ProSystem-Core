@@ -37,6 +37,10 @@ bool cartridge_pokey;
 byte cartridge_controller[2];
 byte cartridge_bank;
 uint cartridge_flags;
+int cartridge_crosshair_x;
+int cartridge_crosshair_y;
+bool cartridge_dualanalog = false;
+uint cartridge_hblank = 34;
 
 static byte* cartridge_buffer = NULL;
 static uint cartridge_size = 0;
@@ -207,13 +211,13 @@ bool cartridge_Load(std::string filename) {
       return false;  
     }
 
-    if(fseek(file, 0, SEEK_END)) {
+    if(fseek(file, 0L, SEEK_END)) {
       fclose(file);
       logger_LogError("Failed to find the end of the cartridge file.", CARTRIDGE_SOURCE);
       return false;
     }
     size = ftell(file);
-    if(fseek(file, 0, SEEK_SET)) {
+    if(fseek(file, 0L, SEEK_SET)) {
       fclose(file);
       logger_LogError("Failed to find the size of the cartridge file.", CARTRIDGE_SOURCE);
       return false;
@@ -324,7 +328,7 @@ void cartridge_Write(word address, byte data) {
       break;
   }
 
-  if(cartridge_pokey && address >= 0x4000 && address < 0x4009) {
+  if(cartridge_pokey && address >= 0x4000 && address <= 0x400f) {
     switch(address) {
       case POKEY_AUDF1:
         pokey_SetRegister(POKEY_AUDF1, data);
@@ -352,6 +356,9 @@ void cartridge_Write(word address, byte data) {
         break;
       case POKEY_AUDCTL:
         pokey_SetRegister(POKEY_AUDCTL, data);
+        break;
+      case POKEY_SKCTLS:
+        pokey_SetRegister(POKEY_SKCTLS, data);
         break;
     }
   }
@@ -398,5 +405,16 @@ void cartridge_Release( ) {
     delete [ ] cartridge_buffer;
     cartridge_size = 0;
     cartridge_buffer = NULL;
+
+    cartridge_type = 0;
+    cartridge_region = 0;
+    cartridge_pokey = 0;
+    memset(cartridge_controller, 0, sizeof(cartridge_controller));
+    cartridge_bank = 0;
+    cartridge_flags = 0;
+    cartridge_crosshair_x = 0;
+    cartridge_crosshair_y = 0;
+    cartridge_hblank = 34;
+    cartridge_dualanalog = false;
   }
 }

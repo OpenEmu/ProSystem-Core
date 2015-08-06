@@ -40,6 +40,7 @@
 // ----------------------------------------------------------------------------
 #include <stdlib.h>
 #include "Pokey.h"
+#include "Prosystem.h"
 #define POKEY_NOTPOLY5 0x80
 #define POKEY_POLY4 0x40
 #define POKEY_PURE 0x20
@@ -65,6 +66,8 @@
 #define POKEY_CHANNEL4 3
 #define POKEY_SAMPLE 4
 
+#define SK_RESET 0x03
+
 byte pokey_buffer[POKEY_BUFFER_SIZE] = {0};
 uint pokey_size = 524;
 
@@ -89,6 +92,37 @@ static uint pokey_divideCount[4];
 static uint pokey_sampleMax;
 static uint pokey_sampleCount[2];
 static uint pokey_baseMultiplier;
+
+static byte rand9[0x1ff];
+static byte rand17[0x1ffff];
+static uint r9;
+static uint r17;
+static byte SKCTL;
+byte RANDOM;
+
+static ulong random_scanline_counter;
+static ulong prev_random_scanline_counter;
+
+static void rand_init(byte *rng, int size, int left, int right, int add)
+{
+    int mask = (1 << size) - 1;
+    int i, x = 0;
+
+    for( i = 0; i < mask; i++ )
+	{
+		if (size == 17)
+			*rng = x >> 6;	/* use bits 6..13 */
+		else
+			*rng = x;		/* use bits 0..7 */
+        rng++;
+        /* calculate next bit */
+		x = ((x << left) + (x >> right) + add) & mask;
+	}
+}
+
+void pokey_setSampleRate( uint rate ) {
+    pokey_sampleRate = rate;
+}
 
 // ----------------------------------------------------------------------------
 // Reset
@@ -120,6 +154,66 @@ void pokey_Reset( ) {
 
   pokey_audctl = 0;
   pokey_baseMultiplier = POKEY_DIV_64;
+
+  /* initialize the random arrays */
+  rand_init(rand9,   9, 8, 1, 0x00180);
+  rand_init(rand17, 17,16, 1, 0x1c000);
+
+  SKCTL = SK_RESET;
+  RANDOM = 0;
+
+  r9 = 0;
+  r17 = 0;
+  random_scanline_counter = 0;
+  prev_random_scanline_counter = 0;
+}                           
+
+/* Called prior to each frame */
+void pokey_Frame() {
+}
+
+/* Called prior to each scanline */
+void pokey_Scanline() {
+  random_scanline_counter += CYCLES_PER_SCANLINE; 
+}
+
+byte pokey_GetRegister(word address) {
+  byte data = 0;
+
+  switch (address) {
+    case POKEY_RANDOM:
+      ulong curr_scanline_counter = 
+        ( random_scanline_counter + prosystem_cycles + prosystem_extra_cycles );
+
+      if( SKCTL & SK_RESET )
+      {
+        ulong adjust = ( ( curr_scanline_counter - prev_random_scanline_counter ) >> 2 );
+        r9 = (uint)((adjust + r9) % 0x001ff);
+        r17 = (uint)((adjust + r17) % 0x1ffff);
+      }
+      else
+      {
+        r9 = 0;
+        r17 = 0;
+      }
+      if( pokey_audctl & POKEY_POLY9 )
+      {
+        RANDOM = rand9[r9];
+      }
+      else
+      {
+        RANDOM = rand17[r17];
+      }
+
+      prev_random_scanline_counter = curr_scanline_counter;
+
+      RANDOM = RANDOM ^ 0xff;
+      data = RANDOM;
+
+      break;
+  }
+
+  return data;
 }                           
 
 // ----------------------------------------------------------------------------
@@ -128,6 +222,10 @@ void pokey_Reset( ) {
 void pokey_SetRegister(word address, byte value) {
 	byte channelMask;
   switch(address) {
+    case POKEY_SKCTLS:
+      SKCTL = value;
+      return;
+
     case POKEY_AUDF1:
       pokey_audf[POKEY_CHANNEL1] = value;
       channelMask = 1 << POKEY_CHANNEL1;

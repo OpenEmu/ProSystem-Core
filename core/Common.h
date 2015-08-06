@@ -46,6 +46,7 @@ extern std::string common_GetErrorMessage( );
 //extern std::string common_GetErrorMessage(DWORD error);
 extern std::string common_GetExtension(std::string filename);
 extern uint common_ParseUint(std::string text);
+extern int common_ParseInt(std::string text);
 extern word common_ParseWord(std::string text);
 extern byte common_ParseByte(std::string text);
 extern bool common_ParseBool(std::string text);

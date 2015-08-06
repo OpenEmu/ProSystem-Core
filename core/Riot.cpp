@@ -28,15 +28,23 @@ bool riot_timing = false;
 word riot_timer = TIM64T;
 byte riot_intervals;
 
-static byte riot_dra = 0;
-static byte riot_drb = 0;
+byte riot_dra = 0;
+byte riot_drb = 0;
 static bool riot_elapsed;
 static int riot_currentTime;
-static word riot_clocks;
+word riot_clocks;
 
 void riot_Reset(void) {
 	riot_SetDRA(0);
 	riot_SetDRB(0);
+
+    riot_timing = false;
+    riot_timer = TIM64T;
+    riot_intervals = 0;
+    riot_clocks = 0;
+
+    riot_elapsed = false;
+    riot_currentTime = 0;
 }
 
 // ----------------------------------------------------------------------------
@@ -104,12 +112,16 @@ void riot_SetInput(const byte* input) {
 					Some games rely on this, and don't actually store anything to SWCHB.*/
 
   memory_ram[SWCHB] = ((~memory_ram[CTLSWB]) | riot_drb);	/*SWCHB as driven by RIOT*/
-	/*now the console switches can force certain bits to ground:*/
-  if (input[0x0c])	memory_ram[SWCHB] = memory_ram[SWCHB] &~ 0x01;
-  if (input[0x0d])	memory_ram[SWCHB] = memory_ram[SWCHB] &~ 0x02;
-  if (input[0x0e])	memory_ram[SWCHB] = memory_ram[SWCHB] &~ 0x08;
-  if (input[0x0f])	memory_ram[SWCHB] = memory_ram[SWCHB] &~ 0x40;
-  if (input[0x10])	memory_ram[SWCHB] = memory_ram[SWCHB] &~ 0x80;
+
+  if(input != NULL)
+  {
+	  /*now the console switches can force certain bits to ground:*/
+      if (input[0x0c])  memory_ram[SWCHB] = memory_ram[SWCHB] &~ 0x01;
+      if (input[0x0d])  memory_ram[SWCHB] = memory_ram[SWCHB] &~ 0x02;
+      if (input[0x0e])  memory_ram[SWCHB] = memory_ram[SWCHB] &~ 0x08;
+      if (input[0x0f])  memory_ram[SWCHB] = memory_ram[SWCHB] &~ 0x40;
+      if (input[0x10])  memory_ram[SWCHB] = memory_ram[SWCHB] &~ 0x80;
+  }
 
 			/*When in 1 button mode, only the legacy 2600 button signal is active.  The others stay off.
 			  When in 2 button mode, only the new signals are active.  2600 button stays off.	(tested)

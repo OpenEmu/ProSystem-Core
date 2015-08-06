@@ -46,6 +46,11 @@ void memory_Reset( ) {
 byte memory_Read(word address) {
   byte tmp_byte;
 
+  if(cartridge_pokey && address == POKEY_RANDOM)
+  {
+    return pokey_GetRegister(POKEY_RANDOM);
+  }
+
   switch ( address ) {
   case INTIM:
   case INTIM | 0x2:
