@@ -298,14 +298,12 @@ const int ProSystemMap[] = { 3, 2, 1, 0, 4, 5, 9, 8, 7, 6, 10, 11, 13, 14, 12, 1
 
 - (BOOL)saveStateToFileAtPath:(NSString *)fileName
 {
-    //return prosystem_Save([fileName UTF8String], false) ? YES : NO;
-    return NO;
+    return prosystem_Save([fileName UTF8String], false) ? YES : NO;
 }
 
 - (BOOL)loadStateFromFileAtPath:(NSString *)fileName
 {
-    //return prosystem_Load([fileName UTF8String]) ? YES : NO;
-    return NO;
+    return prosystem_Load([fileName UTF8String]) ? YES : NO;
 }
 
 static uint sound_GetSampleLength(uint length, uint unit, uint unitMax) {

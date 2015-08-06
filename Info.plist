@@ -22,14 +22,6 @@
 	<string>OEGameCoreController</string>
 	<key>OEGameCoreClass</key>
 	<string>ProSystemGameCore</string>
-	<key>OEGameCoreOptions</key>
-	<dict>
-		<key>openemu.system.7800</key>
-		<dict>
-			<key>OEGameCoreSaveStatesNotSupported</key>
-			<true/>
-		</dict>
-	</dict>
 	<key>OEGameCorePlayerCount</key>
 	<string>2</string>
 	<key>OEProjectURL</key>

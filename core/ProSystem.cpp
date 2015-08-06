@@ -219,7 +219,9 @@ bool prosystem_Save(std::string filename, bool compress) {
   }
 
   logger_LogInfo("Saving game state to file " + filename + ".", PRO_SYSTEM_SOURCE);
-  
+
+  if (!loc_buffer) loc_buffer = (byte *)malloc(33000 * sizeof(byte));
+
   uint size = 0;
   
   uint index;
@@ -312,7 +314,7 @@ bool prosystem_Load(const std::string filename) {
  
   logger_LogInfo("Loading game state from file " + filename + ".", PRO_SYSTEM_SOURCE);
   
-  if (! loc_buffer) loc_buffer = (byte *)malloc(33000 * sizeof(byte));
+  if (!loc_buffer) loc_buffer = (byte *)malloc(33000 * sizeof(byte));
   
   uint size = archive_GetUncompressedFileSize(filename);
   if(size == 0) {
