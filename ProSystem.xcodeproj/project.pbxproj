@@ -157,33 +157,6 @@
 		941F59BC17A6189D0005D7EA /* Zip.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Zip.h; sourceTree = "<group>"; };
 		941F59BD17A6189D0005D7EA /* Zlib.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Zlib.h; sourceTree = "<group>"; };
 		941F59DB17A62ADD0005D7EA /* OpenEmuBase.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenEmuBase.framework; path = "../../Library/Developer/Xcode/DerivedData/OpenEmu-dsehantrxgyfywdpbneyslftzzvv/Build/Products/Debug/OpenEmuBase.framework"; sourceTree = "<group>"; };
-		941F59E017A630990005D7EA /* About.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = About.cpp; sourceTree = "<group>"; };
-		941F59E117A630990005D7EA /* About.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = About.h; sourceTree = "<group>"; };
-		941F59E217A630990005D7EA /* Common.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Common.cpp; sourceTree = "<group>"; };
-		941F59E317A630990005D7EA /* Common.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Common.h; sourceTree = "<group>"; };
-		941F59E417A630990005D7EA /* Configuration.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Configuration.cpp; sourceTree = "<group>"; };
-		941F59E517A630990005D7EA /* Configuration.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Configuration.h; sourceTree = "<group>"; };
-		941F59E617A630990005D7EA /* Console.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Console.cpp; sourceTree = "<group>"; };
-		941F59E717A630990005D7EA /* Console.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Console.h; sourceTree = "<group>"; };
-		941F59E817A630990005D7EA /* Database.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Database.cpp; sourceTree = "<group>"; };
-		941F59E917A630990005D7EA /* Database.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Database.h; sourceTree = "<group>"; };
-		941F59EA17A630990005D7EA /* Display.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Display.cpp; sourceTree = "<group>"; };
-		941F59EB17A630990005D7EA /* Display.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Display.h; sourceTree = "<group>"; };
-		941F59EC17A630990005D7EA /* Help.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Help.cpp; sourceTree = "<group>"; };
-		941F59ED17A630990005D7EA /* Help.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Help.h; sourceTree = "<group>"; };
-		941F59EE17A630990005D7EA /* Input.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Input.cpp; sourceTree = "<group>"; };
-		941F59EF17A630990005D7EA /* Input.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Input.h; sourceTree = "<group>"; };
-		941F59F017A630990005D7EA /* Main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Main.cpp; sourceTree = "<group>"; };
-		941F59F117A630990005D7EA /* Menu.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Menu.cpp; sourceTree = "<group>"; };
-		941F59F217A630990005D7EA /* Menu.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Menu.h; sourceTree = "<group>"; };
-		941F59F317A630990005D7EA /* ProSystem.aps */ = {isa = PBXFileReference; lastKnownFileType = file; path = ProSystem.aps; sourceTree = "<group>"; };
-		941F59F417A630990005D7EA /* ProSystem.ico */ = {isa = PBXFileReference; lastKnownFileType = image.ico; path = ProSystem.ico; sourceTree = "<group>"; };
-		941F59F517A630990005D7EA /* ProSystem.rc */ = {isa = PBXFileReference; lastKnownFileType = text; path = ProSystem.rc; sourceTree = "<group>"; };
-		941F59F617A630990005D7EA /* resource.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = resource.h; sourceTree = "<group>"; };
-		941F59F717A630990005D7EA /* Sound.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Sound.cpp; sourceTree = "<group>"; };
-		941F59F817A630990005D7EA /* Sound.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Sound.h; sourceTree = "<group>"; };
-		941F59F917A630990005D7EA /* Timer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Timer.cpp; sourceTree = "<group>"; };
-		941F59FA17A630990005D7EA /* Timer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Timer.h; sourceTree = "<group>"; };
 		941F59FB17A77CC90005D7EA /* ProSystem.dat */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = ProSystem.dat; sourceTree = SOURCE_ROOT; };
 		941F5A2617A78FF20005D7EA /* OE7800SystemResponderClient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = OE7800SystemResponderClient.h; path = "../OpenEmu/Atari 7800/OE7800SystemResponderClient.h"; sourceTree = "<group>"; };
 		B5008DAD0E8BFB3E005AECAF /* ProSystemGameCore.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ProSystemGameCore.h; sourceTree = "<group>"; };
@@ -358,47 +331,12 @@
 			path = Lib;
 			sourceTree = SOURCE_ROOT;
 		};
-		941F59DF17A630990005D7EA /* Win */ = {
-			isa = PBXGroup;
-			children = (
-				941F59E017A630990005D7EA /* About.cpp */,
-				941F59E117A630990005D7EA /* About.h */,
-				941F59E217A630990005D7EA /* Common.cpp */,
-				941F59E317A630990005D7EA /* Common.h */,
-				941F59E417A630990005D7EA /* Configuration.cpp */,
-				941F59E517A630990005D7EA /* Configuration.h */,
-				941F59E617A630990005D7EA /* Console.cpp */,
-				941F59E717A630990005D7EA /* Console.h */,
-				941F59E817A630990005D7EA /* Database.cpp */,
-				941F59E917A630990005D7EA /* Database.h */,
-				941F59EA17A630990005D7EA /* Display.cpp */,
-				941F59EB17A630990005D7EA /* Display.h */,
-				941F59EC17A630990005D7EA /* Help.cpp */,
-				941F59ED17A630990005D7EA /* Help.h */,
-				941F59EE17A630990005D7EA /* Input.cpp */,
-				941F59EF17A630990005D7EA /* Input.h */,
-				941F59F017A630990005D7EA /* Main.cpp */,
-				941F59F117A630990005D7EA /* Menu.cpp */,
-				941F59F217A630990005D7EA /* Menu.h */,
-				941F59F317A630990005D7EA /* ProSystem.aps */,
-				941F59F417A630990005D7EA /* ProSystem.ico */,
-				941F59F517A630990005D7EA /* ProSystem.rc */,
-				941F59F617A630990005D7EA /* resource.h */,
-				941F59F717A630990005D7EA /* Sound.cpp */,
-				941F59F817A630990005D7EA /* Sound.h */,
-				941F59F917A630990005D7EA /* Timer.cpp */,
-				941F59FA17A630990005D7EA /* Timer.h */,
-			);
-			path = Win;
-			sourceTree = SOURCE_ROOT;
-		};
 		94A9E27F157D637B0083A7DC /* Core */ = {
 			isa = PBXGroup;
 			children = (
 				941F59FB17A77CC90005D7EA /* ProSystem.dat */,
 				941F598017A6189D0005D7EA /* core */,
 				941F59B517A6189D0005D7EA /* Lib */,
-				941F59DF17A630990005D7EA /* Win */,
 			);
 			path = Core;
 			sourceTree = "<group>";
