@@ -33,7 +33,7 @@
 
 #include "ProSystem.h"
 #include "Database.h"
-//#include "Sound.h"
+#include "Sound.h"
 #include "Palette.h"
 #include "Maria.h"
 #include "Tia.h"
@@ -43,6 +43,7 @@
 @interface ProSystemGameCore () <OE7800SystemResponderClient>
 {
     uint32_t *videoBuffer;
+    uint8_t  *soundBuffer;
     int videoWidth, videoHeight;
     uint display_palette32[256];
     byte keyboard_data[17];
@@ -66,6 +67,7 @@ static void display_ResetPalette32( ) {
     if((self = [super init]))
     {
         videoBuffer = (uint32_t *)malloc(320 * 292 * 4);
+        soundBuffer = (uint8_t *)malloc(8192);
         videoWidth  = 320;
         videoHeight = 240;
         current = self;
@@ -77,6 +79,7 @@ static void display_ResetPalette32( ) {
 - (void)dealloc
 {
     free(videoBuffer);
+    free(soundBuffer);
 }
 
 #pragma mark Execution
@@ -153,8 +156,9 @@ static void display_ResetPalette32( ) {
         surface += pitch;
         buffer += current->videoWidth;
     }
-    
-    sound_Store();
+
+    int length = sound_Store(soundBuffer);
+    [[current ringBufferAtIndex:0] write:soundBuffer maxLength:length];
 }
 
 - (void)resetEmulation
@@ -304,77 +308,6 @@ const int ProSystemMap[] = { 3, 2, 1, 0, 4, 5, 9, 8, 7, 6, 10, 11, 13, 14, 12, 1
 - (BOOL)loadStateFromFileAtPath:(NSString *)fileName
 {
     return prosystem_Load([fileName UTF8String]) ? YES : NO;
-}
-
-static uint sound_GetSampleLength(uint length, uint unit, uint unitMax) {
-    uint sampleLength = length / unitMax;
-    uint sampleRemain = length % unitMax;
-    if(sampleRemain != 0 && sampleRemain >= unit) {
-        sampleLength++;
-    }
-    return sampleLength;
-}
-
-static void sound_Resample(const byte* source, byte* target, int length) {
-    typedef struct {
-        word  wFormatTag;
-        word  nChannels;
-        uint nSamplesPerSec;
-        uint nAvgBytesPerSec;
-        word  nBlockAlign;
-        word  wBitsPerSample;
-        word  cbSize;
-    } WAVEFORMATEX;
-    
-# define WAVE_FORMAT_PCM 0
-    
-    static const WAVEFORMATEX SOUND_DEFAULT_FORMAT = {WAVE_FORMAT_PCM, 1, 48000, 48000, 1, 8, 0};
-    static WAVEFORMATEX sound_format = SOUND_DEFAULT_FORMAT;
-    
-    int measurement = sound_format.nSamplesPerSec;
-    int sourceIndex = 0;
-    int targetIndex = 0;
-    
-    int max = ( ( prosystem_frequency * prosystem_scanlines ) << 1 );
-    while(targetIndex < length) {
-        if(measurement >= max) {
-            target[targetIndex++] = source[sourceIndex];
-            measurement -= max;
-        }
-        else {
-            sourceIndex++;
-            measurement += sound_format.nSamplesPerSec;
-        }
-    }
-}
-
-static void sound_Store() {
-#define MAX_BUFFER_SIZE 8192
-    
-    byte sample[MAX_BUFFER_SIZE];
-    memset( sample, 0, MAX_BUFFER_SIZE );
-    uint length = 48000 / prosystem_frequency; /* sound_GetSampleLength(sound_format.nSamplesPerSec, prosystem_frame, prosystem_frequency); */ /* 48000 / prosystem_frequency */
-    sound_Resample(tia_buffer, sample, length);
-    
-    // Ballblazer, Commando, various homebrew and hacks
-    if(cartridge_pokey) {
-        byte pokeySample[MAX_BUFFER_SIZE];
-        memset( pokeySample, 0, MAX_BUFFER_SIZE );
-        sound_Resample(pokey_buffer, pokeySample, length);
-        for(uint index = 0; index < length; index++) {
-            sample[index] += pokeySample[index];
-            sample[index] = sample[index] / 2;
-        }
-    }
-    [[current ringBufferAtIndex:0] write:sample maxLength:length];
-    // Convert 8u to 16s
-//    for(int i = 0; i != length; i ++)
-//    {
-//        int16_t sample16 = (sample[i] << 8) - 32768;
-//        int16_t frame[2] = {sample16, sample16};
-//        
-//        [[current ringBufferAtIndex:0] write:frame maxLength:2];
-//    }
 }
 
 @end
