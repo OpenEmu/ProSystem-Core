@@ -42,90 +42,75 @@
 
 @interface ProSystemGameCore () <OE7800SystemResponderClient>
 {
-    uint32_t *videoBuffer;
-    uint8_t  *soundBuffer;
-    int videoWidth, videoHeight;
-    uint display_palette32[256];
-    byte keyboard_data[17];
+    uint32_t *_videoBuffer;
+    uint32_t _displayPalette[256];
+    uint8_t  *_soundBuffer;
+    uint8_t _inputState[17];
+    int _videoWidth, _videoHeight;
 }
+- (void)setPalette32;
 @end
 
-ProSystemGameCore *current;
 @implementation ProSystemGameCore
-
-static void display_ResetPalette32( ) {
-    for(uint index = 0; index < 256; index++) {
-        uint r = palette_data[(index * 3) + 0] << 16;
-        uint g = palette_data[(index * 3) + 1] << 8;
-        uint b = palette_data[(index * 3) + 2];
-        current->display_palette32[index] = r | g | b;
-    }
-}
 
 - (id)init
 {
     if((self = [super init]))
     {
-        videoBuffer = (uint32_t *)malloc(320 * 292 * 4);
-        soundBuffer = (uint8_t *)malloc(8192);
-        videoWidth  = 320;
-        videoHeight = 240;
-        current = self;
+        _videoBuffer = (uint32_t *)malloc(320 * 292 * 4);
+        _soundBuffer = (uint8_t *)malloc(8192);
+        _videoWidth  = 320;
+        _videoHeight = 240;
     }
-    
+
     return self;
 }
 
 - (void)dealloc
 {
-    free(videoBuffer);
-    free(soundBuffer);
+    free(_videoBuffer);
+    free(_soundBuffer);
 }
 
-#pragma mark Execution
+#pragma mark - Execution
 
 - (BOOL)loadFileAtPath:(NSString *)path error:(NSError **)error
 {
-    memset(keyboard_data, 0, sizeof(keyboard_data));
-    
+    memset(_inputState, 0, sizeof(_inputState));
+
     // Difficulty switches: Left position = (B)eginner, Right position = (A)dvanced
     // Left difficulty switch defaults to left position, "(B)eginner"
-    keyboard_data[15] = 1;
-    
+    _inputState[15] = 1;
+
     // Right difficulty switch defaults to right position, "(A)dvanced", which fixes Tower Toppler
-    keyboard_data[16] = 0;
-    
-    if(cartridge_Load([path UTF8String])) {
-	    //sound_Stop( );
-	    //display_Clear( );
-        
+    _inputState[16] = 0;
+
+    if(cartridge_Load([path UTF8String]))
+    {
         NSString *databasePath = [[[NSBundle bundleForClass:[self class]] resourcePath] stringByAppendingPathComponent:@"ProSystem.dat"];
         database_filename = [databasePath UTF8String];
         database_enabled = true;
-        
+
         // BIOS is optional
         NSString *biosROM = [[self biosDirectoryPath] stringByAppendingPathComponent:@"7800 BIOS (U).rom"];
         if (bios_Load([biosROM UTF8String]))
 		    bios_enabled = true;
-        
+
         NSLog(@"Headerless MD5 hash: %s", cartridge_digest.c_str());
         NSLog(@"Header info (often wrong):\ntitle: %s\ntype: %d\nregion: %s\npokey: %s", cartridge_title.c_str(), cartridge_type, cartridge_region == REGION_NTSC ? "NTSC" : "PAL", cartridge_pokey ? "true" : "false");
-        
+
 	    database_Load(cartridge_digest);
-	    prosystem_Reset( );
-        
+	    prosystem_Reset();
+
         std::string title = common_Trim(cartridge_title);
         NSLog(@"Database info:\ntitle: %@\ntype: %d\nregion: %s\npokey: %s", [NSString stringWithUTF8String:title.c_str()], cartridge_type, cartridge_region == REGION_NTSC ? "NTSC" : "PAL", cartridge_pokey ? "true" : "false");
-        
+
         //sound_SetSampleRate(48000);
-	    //display_ResetPalette( );
-        display_ResetPalette32( );
-	    //console_SetZoom(display_zoom);
-	    //sound_Play( );
-        
+        [self setPalette32];
+
         return YES;
     }
-    
+
     return NO;
 }
 
@@ -136,29 +121,30 @@ static void display_ResetPalette32( ) {
 
 - (void)executeFrameSkippingFrame:(BOOL)skip
 {
-	prosystem_ExecuteFrame(keyboard_data); //wants input
-    
-    current->videoWidth  = maria_visibleArea.GetLength();
-    current->videoHeight = maria_visibleArea.GetHeight();
-    
-    const byte* buffer = maria_surface + ((maria_visibleArea.top - maria_displayArea.top) * maria_visibleArea.GetLength( ));
-    
-    uint* surface = (uint*)videoBuffer;
-    //uint pitch = 320 >> 2; // should be Distance, in bytes, to the start of next line.
-    uint pitch = 320;
-    for(uint indexY = 0; indexY < current->videoHeight; indexY++) {
-        for(uint indexX = 0; indexX < current->videoWidth; indexX += 4) {
-            surface[indexX + 0] = display_palette32[buffer[indexX + 0]];
-            surface[indexX + 1] = display_palette32[buffer[indexX + 1]];
-            surface[indexX + 2] = display_palette32[buffer[indexX + 2]];
-            surface[indexX + 3] = display_palette32[buffer[indexX + 3]];
+	prosystem_ExecuteFrame(_inputState);
+
+    _videoWidth  = maria_visibleArea.GetLength();
+    _videoHeight = maria_visibleArea.GetHeight();
+
+    uint8_t *buffer = maria_surface + ((maria_visibleArea.top - maria_displayArea.top) * maria_visibleArea.GetLength());
+    uint32_t *surface = (uint32_t *)_videoBuffer;
+    int pitch = 320;
+
+    for(int indexY = 0; indexY < _videoHeight; indexY++)
+    {
+        for(int indexX = 0; indexX < _videoWidth; indexX += 4)
+        {
+            surface[indexX + 0] = _displayPalette[buffer[indexX + 0]];
+            surface[indexX + 1] = _displayPalette[buffer[indexX + 1]];
+            surface[indexX + 2] = _displayPalette[buffer[indexX + 2]];
+            surface[indexX + 3] = _displayPalette[buffer[indexX + 3]];
         }
         surface += pitch;
-        buffer += current->videoWidth;
+        buffer += _videoWidth;
     }
 
-    int length = sound_Store(soundBuffer);
-    [[current ringBufferAtIndex:0] write:soundBuffer maxLength:length];
+    int length = sound_Store(_soundBuffer);
+    [[self ringBufferAtIndex:0] write:_soundBuffer maxLength:length];
 }
 
 - (void)resetEmulation
@@ -166,21 +152,26 @@ static void display_ResetPalette32( ) {
     prosystem_Reset();
 }
 
-#pragma mark Video
+- (NSTimeInterval)frameInterval
+{
+    return cartridge_region == REGION_NTSC ? 60 : 50;
+}
+
+#pragma mark - Video
+
+- (const void *)videoBuffer
+{
+    return _videoBuffer;
+}
 
 - (OEIntRect)screenRect
 {
-    return OEIntRectMake(0, 0, current->videoWidth, current->videoHeight);
+    return OEIntRectMake(0, 0, _videoWidth, _videoHeight);
 }
 
 - (OEIntSize)bufferSize
 {
     return OEIntSizeMake(320, 292);
-}
-
-- (const void *)videoBuffer
-{
-    return videoBuffer;
 }
 
 - (GLenum)pixelFormat
@@ -198,21 +189,16 @@ static void display_ResetPalette32( ) {
     return GL_RGB8;
 }
 
-- (NSTimeInterval)frameInterval
-{
-    return cartridge_region == REGION_NTSC ? 60 : 50;
-}
-
-#pragma mark Audio
-
-- (NSUInteger)channelCount
-{
-    return 1;
-}
+#pragma mark - Audio
 
 - (double)audioSampleRate
 {
     return 48000;
+}
+
+- (NSUInteger)channelCount
+{
+    return 1;
 }
 
 - (NSUInteger)audioBitDepth
@@ -220,7 +206,19 @@ static void display_ResetPalette32( ) {
     return 8;
 }
 
-#pragma mark Input
+#pragma mark - Save States
+
+- (BOOL)saveStateToFileAtPath:(NSString *)fileName
+{
+    return prosystem_Save([fileName UTF8String], false) ? YES : NO;
+}
+
+- (BOOL)loadStateFromFileAtPath:(NSString *)fileName
+{
+    return prosystem_Load([fileName UTF8String]) ? YES : NO;
+}
+
+#pragma mark - Input
 // ----------------------------------------------------------------------------
 // SetInput
 // +----------+--------------+-------------------------------------------------
@@ -248,28 +246,29 @@ const int ProSystemMap[] = { 3, 2, 1, 0, 4, 5, 9, 8, 7, 6, 10, 11, 13, 14, 12, 1
 - (oneway void)didPush7800Button:(OE7800Button)button forPlayer:(NSUInteger)player;
 {
     int playerShift = player != 1 ? 6 : 0;
-    
-    switch (button) {
+
+    switch(button)
+    {
         case OE7800ButtonUp:
         case OE7800ButtonDown:
         case OE7800ButtonLeft:
         case OE7800ButtonRight:
         case OE7800ButtonFire1:
         case OE7800ButtonFire2:
-            keyboard_data[ProSystemMap[button + playerShift]] = 1;
+            _inputState[ProSystemMap[button + playerShift]] = 1;
             break;
-        
+
         case OE7800ButtonSelect:
         case OE7800ButtonPause:
         case OE7800ButtonReset:
-            keyboard_data[ProSystemMap[button + 6]] = 1;
+            _inputState[ProSystemMap[button + 6]] = 1;
             break;
-            
+
         case OE7800ButtonLeftDiff:
         case OE7800ButtonRightDiff:
-            keyboard_data[ProSystemMap[button + 6]] ^= (1 << 0);
+            _inputState[ProSystemMap[button + 6]] ^= (1 << 0);
             break;
-            
+
         default:
             break;
     }
@@ -278,36 +277,40 @@ const int ProSystemMap[] = { 3, 2, 1, 0, 4, 5, 9, 8, 7, 6, 10, 11, 13, 14, 12, 1
 - (oneway void)didRelease7800Button:(OE7800Button)button forPlayer:(NSUInteger)player;
 {
     int playerShift = player != 1 ? 6 : 0;
-    
-    switch (button) {
+
+    switch(button)
+    {
         case OE7800ButtonUp:
         case OE7800ButtonDown:
         case OE7800ButtonLeft:
         case OE7800ButtonRight:
         case OE7800ButtonFire1:
         case OE7800ButtonFire2:
-            keyboard_data[ProSystemMap[button + playerShift]] = 0;
+            _inputState[ProSystemMap[button + playerShift]] = 0;
             break;
-            
+
         case OE7800ButtonSelect:
         case OE7800ButtonPause:
         case OE7800ButtonReset:
-            keyboard_data[ProSystemMap[button + 6]] = 0;
+            _inputState[ProSystemMap[button + 6]] = 0;
             break;
-            
+
         default:
             break;
     }
 }
 
-- (BOOL)saveStateToFileAtPath:(NSString *)fileName
+#pragma mark - Misc Helper Methods
+// Set palette 32bpp
+- (void)setPalette32
 {
-    return prosystem_Save([fileName UTF8String], false) ? YES : NO;
-}
-
-- (BOOL)loadStateFromFileAtPath:(NSString *)fileName
-{
-    return prosystem_Load([fileName UTF8String]) ? YES : NO;
+    for(int index = 0; index < 256; index++)
+    {
+        uint32_t r = palette_data[(index * 3) + 0] << 16;
+        uint32_t g = palette_data[(index * 3) + 1] << 8;
+        uint32_t b = palette_data[(index * 3) + 2];
+        _displayPalette[index] = r | g | b;
+    }
 }
 
 @end
