@@ -208,7 +208,6 @@ void prosystem_ExecuteFrame(const byte* input) {
   }
 }
 
-byte *loc_buffer = 0;
 // ----------------------------------------------------------------------------
 // Save
 // ----------------------------------------------------------------------------
@@ -220,7 +219,7 @@ bool prosystem_Save(std::string filename, bool compress) {
 
   logger_LogInfo("Saving game state to file " + filename + ".", PRO_SYSTEM_SOURCE);
 
-  if (!loc_buffer) loc_buffer = (byte *)malloc(33000 * sizeof(byte));
+  byte loc_buffer[33000] = {0};
 
   uint size = 0;
   
@@ -302,6 +301,61 @@ bool prosystem_Save(std::string filename, bool compress) {
   return true;
 }
 
+bool prosystem_Save_buffer(byte *buffer)
+{
+    uint size = 0;
+    uint index;
+
+    for(index = 0; index < 16; index++) {
+        buffer[size + index] = PRO_SYSTEM_STATE_HEADER[index];
+    }
+    size += 16;
+
+    buffer[size++] = 1;
+    for(index = 0; index < 4; index++) {
+        buffer[size + index] = 0;
+    }
+    size += 4;
+
+    for(index = 0; index < 32; index++) {
+        buffer[size + index] = cartridge_digest[index];
+    }
+    size += 32;
+
+    buffer[size++] = sally_a;
+    buffer[size++] = sally_x;
+    buffer[size++] = sally_y;
+    buffer[size++] = sally_p;
+    buffer[size++] = sally_s;
+    buffer[size++] = sally_pc.b.l;
+    buffer[size++] = sally_pc.b.h;
+    buffer[size++] = cartridge_bank;
+
+    for(index = 0; index < 16384; index++) {
+        buffer[size + index] = memory_ram[index];
+    }
+    size += 16384;
+
+    if(cartridge_type == CARTRIDGE_TYPE_SUPERCART_RAM) {
+        for(index = 0; index < 16384; index++) {
+            buffer[size + index] = memory_ram[16384 + index];
+        }
+        size += 16384;
+    }
+
+    // RIOT state
+    buffer[size++] = riot_dra;
+    buffer[size++] = riot_drb;
+    buffer[size++] = riot_timing;
+    buffer[size++] = ( 0xff & ( riot_timer >> 8 ) );
+    buffer[size++] = ( 0xff & riot_timer );
+    buffer[size++] = riot_intervals;
+    buffer[size++] = ( 0xff & ( riot_clocks >> 8 ) );
+    buffer[size++] = ( 0xff & riot_clocks );
+
+    return true;
+}
+
 // ----------------------------------------------------------------------------
 // Load
 // ----------------------------------------------------------------------------
@@ -311,10 +365,9 @@ bool prosystem_Load(const std::string filename) {
     return false;
   }
 
- 
   logger_LogInfo("Loading game state from file " + filename + ".", PRO_SYSTEM_SOURCE);
-  
-  if (!loc_buffer) loc_buffer = (byte *)malloc(33000 * sizeof(byte));
+
+  byte loc_buffer[33000] = {0};
   
   uint size = archive_GetUncompressedFileSize(filename);
   if(size == 0) {
@@ -430,6 +483,76 @@ bool prosystem_Load(const std::string filename) {
   }
 
   return true;
+}
+
+bool prosystem_Load_buffer(const byte *buffer)
+{
+    uint size = cartridge_type == CARTRIDGE_TYPE_SUPERCART_RAM ? 32837 : 16453;
+    uint offset = 0;
+    uint index;
+
+    for(index = 0; index < 16; index++) {
+        if(buffer[offset + index] != PRO_SYSTEM_STATE_HEADER[index]) {
+            logger_LogError("File is not a valid ProSystem save state.", PRO_SYSTEM_SOURCE);
+            return false;
+        }
+    }
+    offset += 16;
+
+    byte version = buffer[offset++];
+    //uint date = 0;
+
+    offset += 4;
+
+    //prosystem_Reset(); // TODO doesn't seem necessary but needs investigation
+
+    char digest[33] = {0};
+    for(index = 0; index < 32; index++) {
+        digest[index] = buffer[offset + index];
+    }
+    offset += 32;
+    if(cartridge_digest != std::string(digest)) {
+        logger_LogError("Load state digest [" + std::string(digest) + "] does not match loaded cartridge digest [" + cartridge_digest + "].", PRO_SYSTEM_SOURCE);
+        return false;
+    }
+
+    sally_a = buffer[offset++];
+    sally_x = buffer[offset++];
+    sally_y = buffer[offset++];
+    sally_p = buffer[offset++];
+    sally_s = buffer[offset++];
+    sally_pc.b.l = buffer[offset++];
+    sally_pc.b.h = buffer[offset++];
+
+    cartridge_StoreBank(buffer[offset++]);
+
+    for(index = 0; index < 16384; index++) {
+        memory_ram[index] = buffer[offset + index];
+    }
+    offset += 16384;
+
+    if(cartridge_type == CARTRIDGE_TYPE_SUPERCART_RAM) {
+        if(size != 32829 && size != 32837) {
+            logger_LogError("Save state file has an invalid size.", PRO_SYSTEM_SOURCE);
+            return false;
+        }
+        for(index = 0; index < 16384; index++) {
+            memory_ram[16384 + index] = buffer[offset + index];
+        }
+        offset += 16384;
+    }
+
+    // RIOT state
+    riot_dra = buffer[offset++];
+    riot_drb = buffer[offset++];
+    riot_timing = buffer[offset++];
+    riot_timer = ( buffer[offset++] << 8 );
+    riot_timer |= buffer[offset++];
+    riot_intervals = buffer[offset++];
+    riot_clocks = ( buffer[offset++] << 8 );
+    riot_clocks |= buffer[offset++];
+
+    return true;
 }
 
 // ----------------------------------------------------------------------------

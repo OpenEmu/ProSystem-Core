@@ -52,6 +52,8 @@ extern void prosystem_Reset( );
 extern void prosystem_ExecuteFrame(const byte* input);
 extern bool prosystem_Save(std::string filename, bool compress);
 extern bool prosystem_Load(std::string filename);
+extern bool prosystem_Save_buffer(byte *buffer);
+extern bool prosystem_Load_buffer(const byte *buffer);
 extern void prosystem_Pause(bool pause);
 extern void prosystem_Close( );
 extern bool prosystem_active;

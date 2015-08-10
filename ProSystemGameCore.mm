@@ -218,6 +218,67 @@
     return prosystem_Load([fileName UTF8String]) ? YES : NO;
 }
 
+- (NSData *)serializeStateWithError:(NSError **)outError
+{
+    size_t length = cartridge_type == CARTRIDGE_TYPE_SUPERCART_RAM ? 32837 : 16453;
+    void *bytes = malloc(length);
+
+    if(prosystem_Save_buffer((uint8_t *)bytes))
+    {
+        return [NSData dataWithBytesNoCopy:bytes length:length freeWhenDone:YES];
+    }
+    else
+    {
+        if(outError)
+        {
+            *outError = [NSError errorWithDomain:OEGameCoreErrorDomain
+                                            code:OEGameCoreCouldNotSaveStateError
+                                        userInfo:@{
+                                                   NSLocalizedDescriptionKey : @"Save state data could not be written",
+                                                   NSLocalizedRecoverySuggestionErrorKey : @"The emulator could not write the state data."
+                                                   }];
+        }
+
+        return nil;
+    }
+}
+
+- (BOOL)deserializeState:(NSData *)state withError:(NSError **)outError
+{
+    size_t serial_size = cartridge_type == CARTRIDGE_TYPE_SUPERCART_RAM ? 32837 : 16453;
+    if(serial_size != [state length])
+    {
+        if(outError)
+        {
+            *outError = [NSError errorWithDomain:OEGameCoreErrorDomain
+                                            code:OEGameCoreStateHasWrongSizeError
+                                        userInfo:@{
+                                                   NSLocalizedDescriptionKey : @"Save state has wrong file size.",
+                                                   NSLocalizedRecoverySuggestionErrorKey : [NSString stringWithFormat:@"The save state does not have the right size, %ld expected, got: %ld.", serial_size, [state length]]
+                                                   }];
+        }
+        return NO;
+    }
+
+    if(prosystem_Load_buffer((uint8_t *)[state bytes]))
+    {
+        return YES;
+    }
+    else
+    {
+        if(outError)
+        {
+            *outError = [NSError errorWithDomain:OEGameCoreErrorDomain
+                                            code:OEGameCoreCouldNotLoadStateError
+                                        userInfo:@{
+                                                   NSLocalizedDescriptionKey : @"The save state data could not be read"
+                                                   }];
+        }
+
+        return NO;
+    }
+}
+
 #pragma mark - Input
 // ----------------------------------------------------------------------------
 // SetInput
