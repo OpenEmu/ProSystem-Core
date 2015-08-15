@@ -79,7 +79,7 @@ hblank=28
 [42682415906c21c6af80e4198403ffda]
 title=Barnyard Blaster
 type=1
-pokey=true
+pokey=false
 controller1=1
 controller2=1
 region=0
@@ -89,7 +89,7 @@ crossy=10
 [babe2bc2976688bafb8b23c192658126]
 title=Barnyard Blaster
 type=1
-pokey=true
+pokey=false
 controller1=1
 controller2=1
 region=1
@@ -841,8 +841,8 @@ crossy=25
 title=Sirius
 type=3
 pokey=false
-controller1=2
-controller2=2
+controller1=1
+controller2=1
 region=0
 flags=0
 [cbb0746192540a13b4c7775c7ce2021f]
