@@ -47,6 +47,10 @@ typedef unsigned int uint;
 #define CYCLES_PER_SCANLINE 454
 // The number of cycles for HBLANK
 #define HBLANK_CYCLES 136
+// The number of cycles per scanline that the 7800 checks for a hit
+#define LG_CYCLES_PER_SCANLINE 318
+// The number of cycles indented (after HBLANK) prior to checking for a hit
+#define LG_CYCLES_INDENT 52
 
 extern void prosystem_Reset( );
 extern void prosystem_ExecuteFrame(const byte* input);
@@ -63,5 +67,12 @@ extern byte prosystem_frame;
 extern word prosystem_scanlines;
 extern uint prosystem_cycles;
 extern uint prosystem_extra_cycles;
+
+// The scanline that the lightgun shot occurred at
+extern int lightgun_scanline;
+// The cycle that the lightgun shot occurred at
+extern float lightgun_cycle;
+// Whether the lightgun is enabled for the current cartridge
+//extern bool lightgun_enabled;
 
 #endif

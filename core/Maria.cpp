@@ -277,19 +277,18 @@ void maria_Reset( ) {
 uint maria_RenderScanline( ) {
   maria_cycles = 0;
 
-  // lightgun
+  // lightgun flash
   // Displays the background color when Maria is disabled (if applicable)
-//  if( ( ( memory_ram[CTRL] & 96 ) != 64 ) &&
-//      maria_scanline >= maria_visibleArea.top && 
-//      maria_scanline <= maria_visibleArea.bottom &&
-//      ( !lightgun_enabled || wii_lightgun_flash ) ) {
-//      byte bgcolor = maria_GetColor(0);
-//      byte *bgstart = maria_surface + ((maria_scanline - maria_displayArea.top) * maria_displayArea.GetLength());      
-//      for(uint index = 0; index < MARIA_LINERAM_SIZE; index++ ) {
-//        *bgstart++ = bgcolor;
-//        *bgstart++ = bgcolor;
-//      }
-//  }
+  if( ( ( memory_ram[CTRL] & 96 ) != 64 ) &&
+      maria_scanline >= maria_visibleArea.top && 
+      maria_scanline <= maria_visibleArea.bottom ) {
+      byte bgcolor = maria_GetColor(0);
+      byte *bgstart = maria_surface + ((maria_scanline - maria_displayArea.top) * maria_displayArea.GetLength());      
+      for(uint index = 0; index < MARIA_LINERAM_SIZE; index++ ) {
+        *bgstart++ = bgcolor;
+        *bgstart++ = bgcolor;
+      }
+  }
 
   if((memory_ram[CTRL] & 96) == 64 && maria_scanline >= maria_displayArea.top && maria_scanline <= maria_displayArea.bottom) {
     maria_cycles += 5; // Maria cycles (DMA Startup)

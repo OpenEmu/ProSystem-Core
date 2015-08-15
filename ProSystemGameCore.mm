@@ -47,6 +47,7 @@
     uint8_t  *_soundBuffer;
     uint8_t _inputState[17];
     int _videoWidth, _videoHeight;
+    BOOL _isLightgunEnabled;
 }
 - (void)setPalette32;
 @end
@@ -107,6 +108,11 @@
 
         //sound_SetSampleRate(48000);
         [self setPalette32];
+
+        _isLightgunEnabled = (cartridge_controller[0] & CARTRIDGE_CONTROLLER_LIGHTGUN);
+        // The light gun 'trigger' is a press on the 'up' button (0x3) and needs the bit toggled
+        if(_isLightgunEnabled)
+            _inputState[3] = 1;
 
         return YES;
     }
@@ -311,6 +317,8 @@ const int ProSystemMap[] = { 3, 2, 1, 0, 4, 5, 9, 8, 7, 6, 10, 11, 13, 14, 12, 1
     switch(button)
     {
         case OE7800ButtonUp:
+            _inputState[ProSystemMap[button + playerShift]] ^= 1;
+            break;
         case OE7800ButtonDown:
         case OE7800ButtonLeft:
         case OE7800ButtonRight:
@@ -342,6 +350,8 @@ const int ProSystemMap[] = { 3, 2, 1, 0, 4, 5, 9, 8, 7, 6, 10, 11, 13, 14, 12, 1
     switch(button)
     {
         case OE7800ButtonUp:
+            _inputState[ProSystemMap[button + playerShift]] ^= 1;
+            break;
         case OE7800ButtonDown:
         case OE7800ButtonLeft:
         case OE7800ButtonRight:
@@ -359,6 +369,46 @@ const int ProSystemMap[] = { 3, 2, 1, 0, 4, 5, 9, 8, 7, 6, 10, 11, 13, 14, 12, 1
         default:
             break;
     }
+}
+
+- (oneway void)mouseMovedAtPoint:(OEIntPoint)aPoint
+{
+    if(_isLightgunEnabled)
+    {
+        // All of this really needs to be tweaked per the 5 games that support light gun
+        int yoffset = (cartridge_region == REGION_NTSC ? 2 : -2);
+
+        // The number of scanlines for the current cartridge
+        int scanlines = _videoHeight;
+
+        float yratio = ((float)scanlines / (float)_videoHeight);
+        float xratio = ((float)LG_CYCLES_PER_SCANLINE / (float)_videoWidth);
+
+        lightgun_scanline = (((float)aPoint.y * yratio) + (maria_visibleArea.top - maria_displayArea.top + 1) + yoffset);
+        lightgun_cycle = (HBLANK_CYCLES + LG_CYCLES_INDENT + ((float)aPoint.x * xratio));
+
+        if(lightgun_cycle > CYCLES_PER_SCANLINE)
+        {
+            lightgun_scanline++;
+            lightgun_cycle -= CYCLES_PER_SCANLINE;
+        }
+    }
+}
+
+- (oneway void)leftMouseDownAtPoint:(OEIntPoint)aPoint
+{
+    if(_isLightgunEnabled)
+    {
+        [self mouseMovedAtPoint:aPoint];
+
+        _inputState[3] = 0;
+    }
+}
+
+- (oneway void)leftMouseUp
+{
+    if(_isLightgunEnabled)
+        _inputState[3] = 1;
 }
 
 #pragma mark - Misc Helper Methods

@@ -32,6 +32,8 @@ word prosystem_frequency = 60;
 byte prosystem_frame = 0;
 word prosystem_scanlines = 262;
 uint prosystem_cycles = 0;
+int lightgun_scanline = 0;
+float lightgun_cycle = 0;
 
 // Whether the last CPU operation resulted in a half cycle (need to take it
 // into consideration)
@@ -70,16 +72,16 @@ void prosystem_Reset( ) {
  */
 static void prosystem_FireLightGun()
 {
-//    if( ( ( maria_scanline >= lightgun_scanline ) && 
-//          ( maria_scanline <= ( lightgun_scanline + 3 ) ) ) && 
-//        ( prosystem_cycles >= ((int)lightgun_cycle ) - 1 ) )
-//    {
-//        memory_ram[INPT4] &= 0x7f;                        
-//    } 
-//    else 
-//    {
-//        memory_ram[INPT4] |= 0x80;                        
-//    }
+    if( ( ( maria_scanline >= lightgun_scanline ) && 
+          ( maria_scanline <= ( lightgun_scanline + 3 ) ) ) && 
+        ( prosystem_cycles >= ((int)lightgun_cycle ) - 1 ) )
+    {
+        memory_ram[INPT4] &= 0x7f;                        
+    } 
+    else 
+    {
+        memory_ram[INPT4] |= 0x80;                        
+    }
 }
 
 uint prosystem_extra_cycles = 0;
@@ -94,8 +96,7 @@ void prosystem_ExecuteFrame(const byte* input) {
   bool cycle_stealing = !(cartridge_flags & CARTRIDGE_CYCLE_STEALING_MASK);
 
   // Is the lightgun enabled for the current frame?
-  //bool lightgun = (lightgun_enabled && (memory_ram[CTRL] & 96) != 64);
-  bool lightgun = false;
+  bool lightgun = ((cartridge_controller[0] & CARTRIDGE_CONTROLLER_LIGHTGUN) && (memory_ram[CTRL] & 96) != 64);
 
   riot_SetInput(input);
 
