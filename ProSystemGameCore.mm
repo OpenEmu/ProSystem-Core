@@ -60,8 +60,6 @@
     {
         _videoBuffer = (uint32_t *)malloc(320 * 292 * 4);
         _soundBuffer = (uint8_t *)malloc(8192);
-        _videoWidth  = 320;
-        _videoHeight = 240;
     }
 
     return self;
@@ -172,7 +170,12 @@
 
 - (OEIntRect)screenRect
 {
-    return OEIntRectMake(0, 0, _videoWidth, _videoHeight);
+    return OEIntRectMake(0, 0, maria_visibleArea.GetLength(), maria_visibleArea.GetHeight());
+}
+
+- (OEIntSize)aspectSize
+{
+    return OEIntSizeMake(maria_visibleArea.GetLength(), maria_visibleArea.GetHeight());
 }
 
 - (OEIntSize)bufferSize
