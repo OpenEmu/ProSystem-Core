@@ -75,14 +75,19 @@
 
 - (BOOL)loadFileAtPath:(NSString *)path error:(NSError **)error
 {
+    const int LEFT_DIFF_SWITCH  = 15;
+    const int RIGHT_DIFF_SWITCH = 16;
+    const int LEFT_POSITION  = 1; // also know as "B"
+    const int RIGHT_POSITION = 0; // also know as "A"
+
     memset(_inputState, 0, sizeof(_inputState));
 
     // Difficulty switches: Left position = (B)eginner, Right position = (A)dvanced
     // Left difficulty switch defaults to left position, "(B)eginner"
-    _inputState[15] = 1;
+    _inputState[LEFT_DIFF_SWITCH] = LEFT_POSITION;
 
     // Right difficulty switch defaults to right position, "(A)dvanced", which fixes Tower Toppler
-    _inputState[16] = 0;
+    _inputState[RIGHT_DIFF_SWITCH] = RIGHT_POSITION;
 
     if(cartridge_Load([path UTF8String]))
     {
@@ -111,6 +116,13 @@
         // The light gun 'trigger' is a press on the 'up' button (0x3) and needs the bit toggled
         if(_isLightgunEnabled)
             _inputState[3] = 1;
+
+        // Set defaults for Bentley Bear (homebrew) so button 1 = run/shoot and button 2 = jump
+        if(cartridge_digest == "ad35a98040a2facb10ecb120bf83bcc3")
+        {
+            _inputState[LEFT_DIFF_SWITCH] = RIGHT_POSITION;
+            _inputState[RIGHT_DIFF_SWITCH] = LEFT_POSITION;
+        }
 
         return YES;
     }
