@@ -170,9 +170,9 @@
 
 #pragma mark - Video
 
-- (const void *)videoBuffer
+- (const void *)getVideoBufferWithHint:(void *)hint
 {
-    return _videoBuffer;
+    return _videoBuffer = (uint32_t*)(hint ?: _videoBuffer);
 }
 
 - (OEIntRect)screenRect
@@ -198,11 +198,6 @@
 - (GLenum)pixelType
 {
     return GL_UNSIGNED_INT_8_8_8_8_REV;
-}
-
-- (GLenum)internalPixelFormat
-{
-    return GL_RGB8;
 }
 
 #pragma mark - Audio
