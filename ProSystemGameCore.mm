@@ -89,15 +89,15 @@
     // Right difficulty switch defaults to right position, "(A)dvanced", which fixes Tower Toppler
     _inputState[RIGHT_DIFF_SWITCH] = RIGHT_POSITION;
 
-    if(cartridge_Load([path UTF8String]))
+    if(cartridge_Load(path.fileSystemRepresentation))
     {
         NSString *databasePath = [[[NSBundle bundleForClass:[self class]] resourcePath] stringByAppendingPathComponent:@"ProSystem.dat"];
-        database_filename = [databasePath UTF8String];
+        database_filename = databasePath.fileSystemRepresentation;
         database_enabled = true;
 
         // BIOS is optional
         NSString *biosROM = [[self biosDirectoryPath] stringByAppendingPathComponent:@"7800 BIOS (U).rom"];
-        if (bios_Load([biosROM UTF8String]))
+        if (bios_Load(biosROM.fileSystemRepresentation))
 		    bios_enabled = true;
 
         NSLog(@"Headerless MD5 hash: %s", cartridge_digest.c_str());
