@@ -1,11 +1,12 @@
 // ----------------------------------------------------------------------------
-//   ___  ___  ___  ___       ___  ____  ___  _  _
-//  /__/ /__/ /  / /__  /__/ /__    /   /_   / |/ /
-// /    / \  /__/ ___/ ___/ ___/   /   /__  /    /  emulator
+//   ___  ___  ___  ___       ___  ____  ___  _  _      __  ___
+//  /__/ /__/ /  / /__  /__/ /__    /   /_   / |/ /      / / _
+// /    / \  /__/ ___/ ___/ ___/   /   /__  /    /   ___/ /__/
 //
 // ----------------------------------------------------------------------------
 // Copyright 2005 Greg Stanton
-// 
+// Copyright 2020 Rupert Carmichael
+//
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; either version 2 of the License, or
@@ -20,101 +21,67 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // ----------------------------------------------------------------------------
-// Sound.cpp
+// Sound.c
 // ----------------------------------------------------------------------------
+#include <stdint.h>
+#include <stdbool.h>
+#include <string.h>
+
 #include "Sound.h"
 
 #define MAX_BUFFER_SIZE 8192
 
-typedef struct
-{
-    uint nSamplesPerSec;
-    word nChannels;
-    word wBitsPerSample;
-} SOUNDCONFIG;
+static uint32_t nSamplesPerSec = 48000;
 
-static const SOUNDCONFIG soundDefaults = {48000, 1, 8};
-static SOUNDCONFIG sound_format = soundDefaults;
-
-// ----------------------------------------------------------------------------
-// GetSampleLength
-// ----------------------------------------------------------------------------
-static uint sound_GetSampleLength(uint length, uint unit, uint unitMax)
-{
-    uint sampleLength = length / unitMax;
-    uint sampleRemain = length % unitMax;
-
-    if(sampleRemain != 0 && sampleRemain >= unit)
-    {
-        sampleLength++;
-    }
-
-    return sampleLength;
-}
-
-// ----------------------------------------------------------------------------
-// Resample
-// ----------------------------------------------------------------------------
-static void sound_Resample(const byte *source, byte *target, int length)
-{
-    int measurement = sound_format.nSamplesPerSec;
+static void sound_Resample(const uint8_t *source, uint8_t *target, int length) {
+    int measurement = nSamplesPerSec;
     int sourceIndex = 0;
     int targetIndex = 0;
     int max = ((prosystem_frequency * prosystem_scanlines) << 1);
 
-    while(targetIndex < length)
-    {
-        if(measurement >= max)
-        {
+    while (targetIndex < length) {
+        if (measurement >= max) {
             target[targetIndex++] = source[sourceIndex];
             measurement -= max;
         }
-        else
-        {
+        else {
             sourceIndex++;
-            measurement += sound_format.nSamplesPerSec;
+            measurement += nSamplesPerSec;
         }
     }
 }
 
-// ----------------------------------------------------------------------------
-// Store
-// ----------------------------------------------------------------------------
-uint sound_Store(byte *out_buffer)
-{
+uint32_t sound_Store(uint8_t *out_buffer) {
     memset(out_buffer, 0, MAX_BUFFER_SIZE);
-    uint length = 48000 / prosystem_frequency; // sound_GetSampleLength(sound_format.nSamplesPerSec, prosystem_frame, prosystem_frequency);
+    uint32_t length = nSamplesPerSec / prosystem_frequency;
     sound_Resample(tia_buffer, out_buffer, length);
+    tia_Clear();
 
     // Ballblazer, Commando, various homebrew and hacks
-    if(cartridge_pokey)
-    {
-        byte pokeySample[MAX_BUFFER_SIZE];
+    if(cartridge_pokey || xm_pokey_enabled) {
+        uint8_t pokeySample[MAX_BUFFER_SIZE];
         memset(pokeySample, 0, MAX_BUFFER_SIZE);
         sound_Resample(pokey_buffer, pokeySample, length);
 
-        for(uint index = 0; index < length; index++)
-        {
-            out_buffer[index] += pokeySample[index];
-            out_buffer[index] = out_buffer[index] / 2;
+        for(uint32_t index = 0; index < length; index++) {
+            uint32_t sound = out_buffer[index] + pokeySample[index];
+            out_buffer[index] = sound >> 1;
         }
     }
+    else {
+      for(uint32_t index = 0; index < length; index++) {
+        out_buffer[index] = out_buffer[index] * 0.75; //>> 1;
+      }
+    }
+    pokey_Clear();
 
     return length;
 }
 
-// ----------------------------------------------------------------------------
-// SetSampleRate
-// ----------------------------------------------------------------------------
-void sound_SetSampleRate(uint rate)
-{
-    sound_format.nSamplesPerSec = rate;
+void sound_SetSampleRate(uint32_t rate) {
+    nSamplesPerSec = rate;
 }
 
-// ----------------------------------------------------------------------------
-// GetSampleRate
-// ----------------------------------------------------------------------------
-uint sound_GetSampleRate()
-{
-    return sound_format.nSamplesPerSec;
+uint32_t sound_GetSampleRate(void) {
+    return nSamplesPerSec;
 }

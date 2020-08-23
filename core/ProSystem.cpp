@@ -52,6 +52,7 @@ void prosystem_Reset( ) {
     tia_Reset( );
     pokey_Clear( );
     pokey_Reset( );
+    xm_Reset( );
     memory_Reset( );
     maria_Clear( );
     maria_Reset( );
@@ -102,7 +103,7 @@ void prosystem_ExecuteFrame(const byte* input) {
 
   prosystem_extra_cycles = 0;
 
-  if(cartridge_pokey) pokey_Frame();
+  if(cartridge_pokey || cartridge_xm) pokey_Frame();
 
   for(maria_scanline = 1; maria_scanline <= prosystem_scanlines; maria_scanline++) {
     if(maria_scanline == maria_displayArea.top) {
@@ -196,11 +197,11 @@ void prosystem_ExecuteFrame(const byte* input) {
     if(lightgun) prosystem_FireLightGun();
 
     tia_Process(2);
-    if(cartridge_pokey) {
+    if(cartridge_pokey || cartridge_xm) {
       pokey_Process(2);
     }
 
-    if(cartridge_pokey) pokey_Scanline();
+    if(cartridge_pokey || cartridge_xm) pokey_Scanline();
   }
 
   prosystem_frame++;
@@ -220,7 +221,7 @@ bool prosystem_Save(std::string filename, bool compress) {
 
   logger_LogInfo("Saving game state to file " + filename + ".", PRO_SYSTEM_SOURCE);
 
-  byte loc_buffer[33000] = {0};
+  byte loc_buffer[33000 + XM_RAM_SIZE + 4] = {0};
 
   uint size = 0;
   
@@ -272,9 +273,19 @@ bool prosystem_Save(std::string filename, bool compress) {
   loc_buffer[size++] = ( 0xff & ( riot_clocks >> 8 ) );
   loc_buffer[size++] = ( 0xff & riot_clocks );
 
-#if 0
-  if(!compress) {
-#endif
+  // XM (if applicable)
+  if (cartridge_xm) {
+    loc_buffer[size++] = xm_reg;
+    loc_buffer[size++] = xm_bank;
+    loc_buffer[size++] = xm_pokey_enabled;
+    loc_buffer[size++] = xm_mem_enabled;
+
+    for (index = 0; index < XM_RAM_SIZE; index++) {
+      loc_buffer[size + index] = xm_ram[index];
+    }
+    size += XM_RAM_SIZE;
+  }
+
     FILE* file = fopen(filename.c_str( ), "wb");
     if(file == NULL) {
       logger_LogError("Failed to open the file " + filename + " for writing.", PRO_SYSTEM_SOURCE);
@@ -289,15 +300,6 @@ bool prosystem_Save(std::string filename, bool compress) {
   
     fflush(file);
     fclose(file);
-#if 0
-  }
-  else {
-    if(!archive_Compress(filename.c_str( ), "Save.sav", loc_buffer, size)) {
-      logger_LogError("Failed to compress the save state data to the file " + filename + ".", PRO_SYSTEM_SOURCE);
-      return false;
-    }
-  }
-#endif 
 
   return true;
 }
@@ -354,6 +356,19 @@ bool prosystem_Save_buffer(byte *buffer)
     buffer[size++] = ( 0xff & ( riot_clocks >> 8 ) );
     buffer[size++] = ( 0xff & riot_clocks );
 
+    // XM (if applicable)
+    if (cartridge_xm) {
+      buffer[size++] = xm_reg;
+      buffer[size++] = xm_bank;
+      buffer[size++] = xm_pokey_enabled;
+      buffer[size++] = xm_mem_enabled;
+
+      for (index = 0; index < XM_RAM_SIZE; index++) {
+        buffer[size + index] = xm_ram[index];
+      }
+      size += XM_RAM_SIZE;
+    }
+
     return true;
 }
 
@@ -368,7 +383,7 @@ bool prosystem_Load(const std::string filename) {
 
   logger_LogInfo("Loading game state from file " + filename + ".", PRO_SYSTEM_SOURCE);
 
-  byte loc_buffer[33000] = {0};
+  byte loc_buffer[33000 + XM_RAM_SIZE + 4] = {0};
   
   uint size = archive_GetUncompressedFileSize(filename);
   if(size == 0) {
@@ -391,10 +406,11 @@ bool prosystem_Load(const std::string filename) {
       return false;
     }
 
-    if( size != 16445 && 
-        size != 32829 && 
-        size != 16453 && 
-        size != 32837 ) {
+    if( size != 16445 && size != 32829 &&     /* no RIOT */
+        size != 16453 && size != 32837 &&     /* with RIOT */
+        size != (16453 + 4 + XM_RAM_SIZE) &&  /* XM without supercart ram */
+        size != (32837 + 4 + XM_RAM_SIZE))    /* XM with supercart ram */
+    {
       fclose(file);
       logger_LogError("Save state file has an invalid size.", PRO_SYSTEM_SOURCE);
       return false;
@@ -406,9 +422,6 @@ bool prosystem_Load(const std::string filename) {
       return false;
     }
     fclose(file);
-  }  
-  else if(size == 16445 || size == 32829) {
-    archive_Uncompress(filename, loc_buffer, size);
   }
   else {
     logger_LogError("Save state file has an invalid size.", PRO_SYSTEM_SOURCE);
@@ -459,7 +472,9 @@ bool prosystem_Load(const std::string filename) {
   offset += 16384;
 
   if(cartridge_type == CARTRIDGE_TYPE_SUPERCART_RAM) {
-    if(size != 32829 && size != 32837) {
+    if (size != 32829 && /* no RIOT */
+        size != 32837 && /* with RIOT */
+        size != (32837 + 4 + XM_RAM_SIZE)) /* XM */ {
       logger_LogError("Save state file has an invalid size.", PRO_SYSTEM_SOURCE);
       return false;
     }
@@ -469,8 +484,10 @@ bool prosystem_Load(const std::string filename) {
     offset += 16384; 
   }  
 
-  if( size == 16453 || size == 32837 )
-  {
+  if (size == 16453 || /* no supercart ram */
+      size == 32837 || /* supercart ram */
+      size == (16453 + 4 + XM_RAM_SIZE) || /* xm, no supercart ram */
+      size == (32837 + 4 + XM_RAM_SIZE)) /* xm, supercart ram */ {
       // RIOT state
       riot_dra = loc_buffer[offset++];
       riot_drb = loc_buffer[offset++];
@@ -480,7 +497,23 @@ bool prosystem_Load(const std::string filename) {
       riot_intervals = loc_buffer[offset++];
       riot_clocks = ( loc_buffer[offset++] << 8 );
       riot_clocks |= loc_buffer[offset++];
+  }
 
+  // XM (if applicable)
+  if (cartridge_xm) {
+      if ((size != (16453 + 4 + XM_RAM_SIZE)) &&
+          (size != (32837 + 4 + XM_RAM_SIZE))) {
+          logger_LogError("Save state file has an invalid size.", PRO_SYSTEM_SOURCE);
+          return false;
+      }
+      xm_reg = loc_buffer[offset++];
+      xm_bank = loc_buffer[offset++];
+      xm_pokey_enabled = loc_buffer[offset++];
+      xm_mem_enabled = loc_buffer[offset++];
+
+      for (index = 0; index < XM_RAM_SIZE; index++) {
+          xm_ram[index] = loc_buffer[offset++];
+      }
   }
 
   return true;
@@ -489,6 +522,9 @@ bool prosystem_Load(const std::string filename) {
 bool prosystem_Load_buffer(const byte *buffer)
 {
     uint size = cartridge_type == CARTRIDGE_TYPE_SUPERCART_RAM ? 32837 : 16453;
+    if(cartridge_xm) {
+        size += 4 + XM_RAM_SIZE;
+    }
     uint offset = 0;
     uint index;
 
@@ -533,25 +569,49 @@ bool prosystem_Load_buffer(const byte *buffer)
     offset += 16384;
 
     if(cartridge_type == CARTRIDGE_TYPE_SUPERCART_RAM) {
-        if(size != 32829 && size != 32837) {
+      if (size != 32829 && /* no RIOT */
+          size != 32837 && /* with RIOT */
+          size != (32837 + 4 + XM_RAM_SIZE)) /* XM */ {
+        logger_LogError("Save state file has an invalid size.", PRO_SYSTEM_SOURCE);
+        return false;
+      }
+      for(index = 0; index < 16384; index++) {
+        memory_ram[16384 + index] = buffer[offset + index];
+      }
+      offset += 16384;
+    }
+
+    if (size == 16453 || /* no supercart ram */
+        size == 32837 || /* supercart ram */
+        size == (16453 + 4 + XM_RAM_SIZE) || /* xm, no supercart ram */
+        size == (32837 + 4 + XM_RAM_SIZE)) /* xm, supercart ram */ {
+        // RIOT state
+        riot_dra = buffer[offset++];
+        riot_drb = buffer[offset++];
+        riot_timing = buffer[offset++];
+        riot_timer = ( buffer[offset++] << 8 );
+        riot_timer |= buffer[offset++];
+        riot_intervals = buffer[offset++];
+        riot_clocks = ( buffer[offset++] << 8 );
+        riot_clocks |= buffer[offset++];
+    }
+
+    // XM (if applicable)
+    if (cartridge_xm) {
+        if ((size != (16453 + 4 + XM_RAM_SIZE)) &&
+            (size != (32837 + 4 + XM_RAM_SIZE))) {
             logger_LogError("Save state file has an invalid size.", PRO_SYSTEM_SOURCE);
             return false;
         }
-        for(index = 0; index < 16384; index++) {
-            memory_ram[16384 + index] = buffer[offset + index];
-        }
-        offset += 16384;
-    }
+        xm_reg = buffer[offset++];
+        xm_bank = buffer[offset++];
+        xm_pokey_enabled = buffer[offset++];
+        xm_mem_enabled = buffer[offset++];
 
-    // RIOT state
-    riot_dra = buffer[offset++];
-    riot_drb = buffer[offset++];
-    riot_timing = buffer[offset++];
-    riot_timer = ( buffer[offset++] << 8 );
-    riot_timer |= buffer[offset++];
-    riot_intervals = buffer[offset++];
-    riot_clocks = ( buffer[offset++] << 8 );
-    riot_clocks |= buffer[offset++];
+        for (index = 0; index < XM_RAM_SIZE; index++) {
+            xm_ram[index] = buffer[offset++];
+        }
+    }
 
     return true;
 }

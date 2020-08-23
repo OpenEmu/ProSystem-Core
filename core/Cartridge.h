@@ -31,11 +31,14 @@
 #define CARTRIDGE_TYPE_SUPERCART_ROM 4
 #define CARTRIDGE_TYPE_ABSOLUTE 5
 #define CARTRIDGE_TYPE_ACTIVISION 6
+#define CARTRIDGE_TYPE_NORMAL_RAM 7
 #define CARTRIDGE_CONTROLLER_NONE 0
 #define CARTRIDGE_CONTROLLER_JOYSTICK 1
 #define CARTRIDGE_CONTROLLER_LIGHTGUN 2
 #define CARTRIDGE_WSYNC_MASK 2
 #define CARTRIDGE_CYCLE_STEALING_MASK 1
+
+#define HBLANK_DEFAULT 34
 
 #include <stdio.h>
 #include <string>
@@ -65,9 +68,15 @@ extern std::string cartridge_filename;
 extern byte cartridge_type;
 extern byte cartridge_region;
 extern bool cartridge_pokey;
+extern bool cartridge_pokey450;
+extern bool cartridge_xm;
 extern byte cartridge_controller[2];
 extern byte cartridge_bank;
 extern uint cartridge_flags;
+extern bool cartridge_disable_bios;
+extern byte cartridge_left_switch;
+extern byte cartridge_right_switch;
+extern bool cartridge_swap_buttons;
 
 // The x offset for the lightgun crosshair (allows per cartridge adjustments)
 extern int cartridge_crosshair_x;
@@ -77,5 +86,7 @@ extern int cartridge_crosshair_y;
 extern uint cartridge_hblank;
 // Whether the cartridge supports dual analog
 extern bool cartridge_dualanalog;
+// Whether the high score cart is enabled
+extern bool cartridge_hsc_enabled;
 
 #endif
