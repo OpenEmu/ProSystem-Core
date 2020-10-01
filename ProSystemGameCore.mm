@@ -96,18 +96,20 @@
         database_enabled = true;
 
         // BIOS is optional
-        NSString *biosROM = [[self biosDirectoryPath] stringByAppendingPathComponent:@"7800 BIOS (U).rom"];
+        NSString *biosROM = [self.biosDirectoryPath stringByAppendingPathComponent:@"7800 BIOS (U).rom"];
         if (bios_Load(biosROM.fileSystemRepresentation))
 		    bios_enabled = true;
 
-        NSLog(@"Headerless MD5 hash: %s", cartridge_digest.c_str());
-        NSLog(@"Header info (often wrong):\ntitle: %s\ntype: %d\nregion: %s\npokey: %s", cartridge_title.c_str(), cartridge_type, cartridge_region == REGION_NTSC ? "NTSC" : "PAL", cartridge_pokey ? "true" : "false");
+        NSLog(@"[ProSystem] Headerless MD5 hash: %s", cartridge_digest.c_str());
+        NSLog(@"[ProSystem] Header info (often wrong):\ntitle: %s\ntype: %d\nregion: %s\npokey: %s", cartridge_title.c_str(), cartridge_type, cartridge_region == REGION_NTSC ? "NTSC" : "PAL", cartridge_pokey ? "true" : "false");
 
 	    database_Load(cartridge_digest);
 	    prosystem_Reset();
 
-        std::string title = common_Trim(cartridge_title);
-        NSLog(@"Database info:\ntitle: %@\ntype: %d\nregion: %s\npokey: %s", [NSString stringWithUTF8String:title.c_str()], cartridge_type, cartridge_region == REGION_NTSC ? "NTSC" : "PAL", cartridge_pokey ? "true" : "false");
+        if (cart_in_db) {
+            std::string title = common_Trim(cartridge_title);
+            NSLog(@"[ProSystem] Database info:\ntitle: %@\ntype: %d\nregion: %s\npokey: %s", [NSString stringWithUTF8String:title.c_str()], cartridge_type, cartridge_region == REGION_NTSC ? "NTSC" : "PAL", cartridge_pokey ? "true" : "false");
+        }
 
         //sound_SetSampleRate(48000);
         [self setPalette32];
@@ -117,12 +119,9 @@
         if(_isLightgunEnabled)
             _inputState[3] = 1;
 
-        // Set defaults for Bentley Bear (homebrew) so button 1 = run/shoot and button 2 = jump
-        if(cartridge_digest == "ad35a98040a2facb10ecb120bf83bcc3")
-        {
-            _inputState[LEFT_DIFF_SWITCH] = RIGHT_POSITION;
-            _inputState[RIGHT_DIFF_SWITCH] = LEFT_POSITION;
-        }
+        // Set switch overrides from database
+        _inputState[LEFT_DIFF_SWITCH] = cartridge_left_switch;
+        _inputState[RIGHT_DIFF_SWITCH] = cartridge_right_switch;
 
         return YES;
     }
@@ -232,6 +231,9 @@
 - (NSData *)serializeStateWithError:(NSError **)outError
 {
     size_t length = cartridge_type == CARTRIDGE_TYPE_SUPERCART_RAM ? 32837 : 16453;
+    if(cartridge_xm) {
+        length += 4 + XM_RAM_SIZE;
+    }
     void *bytes = malloc(length);
 
     if(prosystem_Save_buffer((uint8_t *)bytes))
@@ -250,18 +252,21 @@
 - (BOOL)deserializeState:(NSData *)state withError:(NSError **)outError
 {
     size_t serial_size = cartridge_type == CARTRIDGE_TYPE_SUPERCART_RAM ? 32837 : 16453;
-    if(serial_size != [state length]) {
+    if(cartridge_xm) {
+        serial_size += 4 + XM_RAM_SIZE;
+    }
+    if(serial_size != state.length) {
         if(outError) {
             *outError = [NSError errorWithDomain:OEGameCoreErrorDomain code:OEGameCoreStateHasWrongSizeError userInfo:@{
                 NSLocalizedDescriptionKey : @"Save state has wrong file size.",
-                NSLocalizedRecoverySuggestionErrorKey : [NSString stringWithFormat:@"The save state does not have the right size, %ld expected, got: %ld.", serial_size, [state length]]
+                NSLocalizedRecoverySuggestionErrorKey : [NSString stringWithFormat:@"The save state does not have the right size, %ld expected, got: %ld.", serial_size, state.length]
             }];
         }
 
         return NO;
     }
 
-    if(prosystem_Load_buffer((uint8_t *)[state bytes]))
+    if(prosystem_Load_buffer((uint8_t *)state.bytes))
         return YES;
 
     if(outError) {

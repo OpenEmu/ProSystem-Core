@@ -5,7 +5,7 @@
 //
 // ----------------------------------------------------------------------------
 // Copyright 2005 Greg Stanton
-// 
+//
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; either version 2 of the License, or
@@ -39,8 +39,8 @@ typedef unsigned int uint;
 extern void memory_Reset( );
 extern byte memory_Read(word address);
 extern void memory_Write(word address, byte data);
-extern void memory_WriteROM(word address, word size, const byte* data);
-extern void memory_ClearROM(word address, word size);
+extern void memory_WriteROM(word address, uint size, const byte* data);
+extern void memory_ClearROM(word address, uint size);
 extern byte memory_ram[MEMORY_SIZE];
 extern byte memory_rom[MEMORY_SIZE];
 

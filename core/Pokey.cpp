@@ -5,7 +5,7 @@
 //
 // ----------------------------------------------------------------------------
 // Copyright 2005 Greg Stanton
-// 
+//
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; either version 2 of the License, or
@@ -21,32 +21,33 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 // ----------------------------------------------------------------------------
 // PokeySound is Copyright(c) 1997 by Ron Fries
-//                                                                           
-// This library is free software; you can redistribute it and/or modify it   
-// under the terms of version 2 of the GNU Library General Public License    
-// as published by the Free Software Foundation.                             
-//                                                                           
-// This library is distributed in the hope that it will be useful, but       
-// WITHOUT ANY WARRANTY; without even the implied warranty of                
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Library 
-// General Public License for more details.                                  
-// To obtain a copy of the GNU Library General Public License, write to the  
-// Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.   
-//                                                                           
-// Any permitted reproduction of these routines, in whole or in part, must   
-// bear this legend.                                                         
+//
+// This library is free software; you can redistribute it and/or modify it
+// under the terms of version 2 of the GNU Library General Public License
+// as published by the Free Software Foundation.
+//
+// This library is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Library
+// General Public License for more details.
+// To obtain a copy of the GNU Library General Public License, write to the
+// Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+//
+// Any permitted reproduction of these routines, in whole or in part, must
+// bear this legend.
 // ----------------------------------------------------------------------------
 // Pokey.cpp
 // ----------------------------------------------------------------------------
+
 #include <stdlib.h>
 #include "Pokey.h"
-#include "Prosystem.h"
+#include "ProSystem.h"
 #define POKEY_NOTPOLY5 0x80
 #define POKEY_POLY4 0x40
 #define POKEY_PURE 0x20
 #define POKEY_VOLUME_ONLY 0x10
 #define POKEY_VOLUME_MASK 0x0f
-#define POKEY_POLY9 0x80 
+#define POKEY_POLY9 0x80
 #define POKEY_CH1_179 0x40
 #define POKEY_CH3_179 0x20
 #define POKEY_CH1_CH2 0x10
@@ -66,10 +67,10 @@
 #define POKEY_CHANNEL4 3
 #define POKEY_SAMPLE 4
 
-#define SK_RESET 0x03
+#define SK_RESET    0x03
 
 byte pokey_buffer[POKEY_BUFFER_SIZE] = {0};
-uint pokey_size = 524;
+uint pokey_size = (POKEY_BUFFER_SIZE - 512); // 524 previously
 
 static uint pokey_frequency = 1787520;
 static uint pokey_sampleRate = 31440;
@@ -100,6 +101,9 @@ static uint r17;
 static byte SKCTL;
 byte RANDOM;
 
+byte POT_input[8] = {228, 228, 228, 228, 228, 228, 228, 228};
+static int pot_scanline;
+
 static ulong random_scanline_counter;
 static ulong prev_random_scanline_counter;
 
@@ -109,15 +113,15 @@ static void rand_init(byte *rng, int size, int left, int right, int add)
     int i, x = 0;
 
     for( i = 0; i < mask; i++ )
-	{
-		if (size == 17)
-			*rng = x >> 6;	/* use bits 6..13 */
-		else
-			*rng = x;		/* use bits 0..7 */
+    {
+        if (size == 17)
+            *rng = x >> 6;    /* use bits 6..13 */
+        else
+            *rng = x;        /* use bits 0..7 */
         rng++;
         /* calculate next bit */
-		x = ((x << left) + (x >> right) + add) & mask;
-	}
+        x = ((x << left) + (x >> right) + add) & mask;
+    }
 }
 
 void pokey_setSampleRate( uint rate ) {
@@ -128,6 +132,9 @@ void pokey_setSampleRate( uint rate ) {
 // Reset
 // ----------------------------------------------------------------------------
 void pokey_Reset( ) {
+  pot_scanline = 0;
+  pokey_soundCntr = 0;
+
   for(int index = 0; index < POKEY_POLY17_SIZE; index++) {
     pokey_poly17[index] = rand( ) & 1;
   }
@@ -152,6 +159,10 @@ void pokey_Reset( ) {
     pokey_audf[channel] = 0;
   }
 
+  for(int i = 0; i < 8; i++) {
+    POT_input[i] = 228;
+  }
+
   pokey_audctl = 0;
   pokey_baseMultiplier = POKEY_DIV_64;
 
@@ -166,7 +177,7 @@ void pokey_Reset( ) {
   r17 = 0;
   random_scanline_counter = 0;
   prev_random_scanline_counter = 0;
-}                           
+}
 
 /* Called prior to each frame */
 void pokey_Frame() {
@@ -174,15 +185,33 @@ void pokey_Frame() {
 
 /* Called prior to each scanline */
 void pokey_Scanline() {
-  random_scanline_counter += CYCLES_PER_SCANLINE; 
+  random_scanline_counter += CYCLES_PER_SCANLINE;
+
+    if (pot_scanline < 228)
+        pot_scanline++;
 }
 
 byte pokey_GetRegister(word address) {
   byte data = 0;
 
+  byte addr = address & 0x0f;
+  if (addr < 8) {
+    byte b = POT_input[addr];
+    if (b <= pot_scanline)
+      return b;
+    return pot_scanline;
+  }
+
   switch (address) {
+    case POKEY_ALLPOT: {
+      byte b = 0;
+            for (int i = 0; i < 8; i++)
+                if (POT_input[addr] <= pot_scanline)
+                    b &= ~(1 << i);        /* reset bit if pot value known */
+      return b;
+    }
     case POKEY_RANDOM:
-      ulong curr_scanline_counter = 
+      ulong curr_scanline_counter =
         ( random_scanline_counter + prosystem_cycles + prosystem_extra_cycles );
 
       if( SKCTL & SK_RESET )
@@ -209,21 +238,27 @@ byte pokey_GetRegister(word address) {
 
       RANDOM = RANDOM ^ 0xff;
       data = RANDOM;
-
       break;
   }
 
   return data;
-}                           
+}
 
 // ----------------------------------------------------------------------------
 // SetRegister
 // ----------------------------------------------------------------------------
 void pokey_SetRegister(word address, byte value) {
-	byte channelMask;
+  byte channelMask;
   switch(address) {
+    case POKEY_POTGO:
+      if (!(SKCTL & 4))
+        pot_scanline = 0;    /* slow pot mode */
+      return;
+
     case POKEY_SKCTLS:
       SKCTL = value;
+      if (value & 4)
+        pot_scanline = 228;    /* fast pot mode - return results immediately */
       return;
 
     case POKEY_AUDF1:
@@ -233,7 +268,7 @@ void pokey_SetRegister(word address, byte value) {
         channelMask |= 1 << POKEY_CHANNEL2;
       }
       break;
-    
+
     case POKEY_AUDC1:
       pokey_audc[POKEY_CHANNEL1] = value;
       channelMask = 1 << POKEY_CHANNEL1;
@@ -294,7 +329,7 @@ void pokey_SetRegister(word address, byte value) {
       channelMask = 0;
       break;
   }
-    
+
   uint newValue = 0;
 
   if(channelMask & (1 << POKEY_CHANNEL1)) {
@@ -342,7 +377,7 @@ void pokey_SetRegister(word address, byte value) {
     }
     if(newValue!= pokey_divideMax[POKEY_CHANNEL3]) {
       pokey_divideMax[POKEY_CHANNEL3] = newValue;
-      if(pokey_divideCount[POKEY_CHANNEL3] > newValue) {   
+      if(pokey_divideCount[POKEY_CHANNEL3] > newValue) {
         pokey_divideCount[POKEY_CHANNEL3] = newValue;
       }
     }
@@ -364,19 +399,25 @@ void pokey_SetRegister(word address, byte value) {
       pokey_divideMax[POKEY_CHANNEL4] = newValue;
       if(pokey_divideCount[POKEY_CHANNEL4] > newValue) {
         pokey_divideCount[POKEY_CHANNEL4] = newValue;
-      } 
+      }
     }
   }
 
   for(byte channel = POKEY_CHANNEL1; channel <= POKEY_CHANNEL4; channel++) {
     if(channelMask & (1 << channel)) {
-      if((pokey_audc[channel] & POKEY_VOLUME_ONLY) || ((pokey_audc[channel] & POKEY_VOLUME_MASK) == 0) || (pokey_divideMax[channel] < (pokey_sampleMax >> 8))) {
+      if((pokey_audc[channel] & POKEY_VOLUME_ONLY) ||
+        ((pokey_audc[channel] & POKEY_VOLUME_MASK) == 0) ||
+        (pokey_divideMax[channel] < (pokey_sampleMax >> 8))) {
+#if 1 // WII
+        pokey_outVol[channel] = 1;
+#else
         pokey_outVol[channel] = pokey_audc[channel] & POKEY_VOLUME_MASK;
+#endif
         pokey_divideCount[channel] = 0x7fffffff;
         pokey_divideMax[channel] = 0x7fffffff;
       }
     }
-  } 
+  }
 }
 
 // ----------------------------------------------------------------------------
@@ -384,13 +425,18 @@ void pokey_SetRegister(word address, byte value) {
 // ----------------------------------------------------------------------------
 void pokey_Process(uint length) {
   byte* buffer = pokey_buffer + pokey_soundCntr;
-  uint* sampleCntrPtr = (uint*)((byte*)(&pokey_sampleCount[0]) + 1);
+//#ifdef BIG_ENDIAN
+//  uint* sampleCntrPtrB = (uint*)((byte*)&pokey_sampleCount[0] + 3);
+//#else
+  uint* sampleCntrPtrB = (uint*)((byte*)&pokey_sampleCount[0] + 1);
+//#endif
   uint size = length;
 
   while(length) {
+
     byte currentValue;
     byte nextEvent = POKEY_SAMPLE;
-    uint eventMin = *sampleCntrPtr;
+    uint eventMin = *sampleCntrPtrB;
 
     byte channel;
     for(channel = POKEY_CHANNEL1; channel <= POKEY_CHANNEL4; channel++) {
@@ -399,12 +445,12 @@ void pokey_Process(uint length) {
         nextEvent = channel;
       }
     }
-    
+
     for(channel = POKEY_CHANNEL1; channel <= POKEY_CHANNEL4; channel++) {
       pokey_divideCount[channel] -= eventMin;
     }
 
-    *sampleCntrPtr -= eventMin;
+    *sampleCntrPtrB -= eventMin;
     pokey_polyAdjust += eventMin;
 
     if(nextEvent != POKEY_SAMPLE) {
@@ -434,7 +480,11 @@ void pokey_Process(uint length) {
       }
     }
     else {
+//#ifdef BIG_ENDIAN
+//      *(pokey_sampleCount + 1) += pokey_sampleMax;
+//#else
       *pokey_sampleCount += pokey_sampleMax;
+//#endif
       currentValue = 0;
 
       for(channel = POKEY_CHANNEL1; channel <= POKEY_CHANNEL4; channel++) {
@@ -445,8 +495,8 @@ void pokey_Process(uint length) {
       *buffer++ = currentValue;
       length--;
     }
-  }  
-  
+  }
+
   pokey_soundCntr += size;
   if(pokey_soundCntr >= pokey_size) {
     pokey_soundCntr = 0;
@@ -457,7 +507,6 @@ void pokey_Process(uint length) {
 // Clear
 // ----------------------------------------------------------------------------
 void pokey_Clear( ) {
-  for(int index = 0; index < POKEY_BUFFER_SIZE; index++) {
-    pokey_buffer[index] = 0;
-  }
+  pokey_soundCntr = 0;
+  memset(pokey_buffer, 0, POKEY_BUFFER_SIZE);
 }

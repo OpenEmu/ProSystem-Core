@@ -25,6 +25,7 @@
 #include "Database.h"
 #define DATABASE_SOURCE "Database.cpp"
 
+bool cart_in_db = false;
 bool database_enabled = true;
 std::string database_filename;
 
@@ -44,6 +45,7 @@ void database_Initialize( ) {
 // Load
 // ----------------------------------------------------------------------------
 bool database_Load(std::string digest) {
+  cart_in_db = false;
   if(database_enabled) {
 	logger_LogInfo("Accessing database " + database_filename + ".", DATABASE_SOURCE);
     
@@ -53,13 +55,22 @@ bool database_Load(std::string digest) {
       return false;  
     }
 
+    // max count of items in the database
+    static int count = 17;
+
     char buffer[256];
     while(fgets(buffer, 256, file) != NULL) {
       std::string line = buffer;
       if(line.compare(1, 32, digest.c_str( )) == 0) {
-        std::string entry[11];
-        for(int index = 0; index < 11; index++) {
+        cart_in_db = true;
+        std::string entry[count];
+        for (int index = 0; index < count; index++) {
+          buffer[0] = '\0';
           fgets(buffer, 256, file);
+          if (strchr(buffer, '[')) {
+              // Passed the current game in DB
+              break;
+          }
           entry[index] = common_Remove(buffer, '\n');  
           entry[index] = common_Remove(entry[index], '\r');
         }
@@ -73,7 +84,7 @@ bool database_Load(std::string digest) {
         cartridge_flags = common_ParseUint(database_GetValue(entry[6]));
 
         // Optionally load the lightgun crosshair offsets, hblank, dual analog
-        for(int index = 7; index < 11; index++)
+        for(int index = 7; index < count; index++)
         {
           if(entry[index].find("crossx") != std::string::npos)
           {
@@ -90,9 +101,32 @@ bool database_Load(std::string digest) {
           if(entry[index].find("dualanalog") != std::string::npos)
           {
               cartridge_dualanalog = common_ParseBool(database_GetValue(entry[index]));
-          }         
+          }
+          if (entry[index].find("pokey450") != std::string::npos) {
+              cartridge_pokey450 = common_ParseBool(database_GetValue(entry[index]));
+              if (cartridge_pokey450) {
+                  cartridge_pokey = true;
+              }
+          }
+          if (entry[index].find("xm") != std::string::npos) {
+              cartridge_xm = common_ParseBool(database_GetValue(entry[index]));
+          }
+          if (entry[index].find("disablebios") != std::string::npos) {
+              cartridge_disable_bios = common_ParseBool(database_GetValue(entry[index]));
+          }
+          if (entry[index].find("leftswitch") != std::string::npos) {
+              cartridge_left_switch = common_ParseByte(database_GetValue(entry[index]));
+          }
+          if (entry[index].find("rightswitch") != std::string::npos) {
+              cartridge_right_switch = common_ParseByte(database_GetValue(entry[index]));
+          }
+          if (entry[index].find("swapbuttons") != std::string::npos) {
+              cartridge_swap_buttons = common_ParseBool(database_GetValue(entry[index]));
+          }
+          if (entry[index].find("hsc") != std::string::npos) {
+              cartridge_hsc_enabled = common_ParseBool(database_GetValue(entry[index]));
+          }
         }
-
         break;
       }
     }    

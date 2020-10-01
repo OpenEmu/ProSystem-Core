@@ -5,7 +5,7 @@
 //
 // ----------------------------------------------------------------------------
 // Copyright 2005 Greg Stanton
-// 
+//
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; either version 2 of the License, or
@@ -23,6 +23,7 @@
 // Memory.cpp
 // ----------------------------------------------------------------------------
 #include "Memory.h"
+#include "ExpansionModule.h"
 
 byte memory_ram[MEMORY_SIZE] = {0};
 byte memory_rom[MEMORY_SIZE] = {0};
@@ -46,22 +47,32 @@ void memory_Reset( ) {
 byte memory_Read(word address) {
   byte tmp_byte;
 
-  if(cartridge_pokey && address == POKEY_RANDOM)
-  {
-    return pokey_GetRegister(POKEY_RANDOM);
+  if (cartridge_xm) {
+    if ((address >= 0x0470 && address < 0x0480) ||
+        (xm_pokey_enabled && (address >= 0x0450 && address < 0x0470)) ||
+        (xm_mem_enabled && (address >= 0x4000 && address < 0x8000))) {
+      return xm_Read(address);
+    }
+  }
+
+  if (cartridge_pokey && (
+      (!cartridge_pokey450 && (address >= 0x4000 && address <= 0x400f)) ||
+      (cartridge_pokey450 && (address >= 0x0450 && address < 0x0470)))) {
+    return pokey_GetRegister(
+      cartridge_pokey450 ? 0x4000 + (address - 0x0450) : address);
   }
 
   switch ( address ) {
   case INTIM:
   case INTIM | 0x2:
-	memory_ram[INTFLG] &= 0x7f;
+    memory_ram[INTFLG] &= 0x7f;
     return memory_ram[INTIM];
-	break;
+    break;
   case INTFLG:
   case INTFLG | 0x2:
-	 tmp_byte = memory_ram[INTFLG];
-	 memory_ram[INTFLG] &= 0x7f;
-	 return tmp_byte; 
+     tmp_byte = memory_ram[INTFLG];
+     memory_ram[INTFLG] &= 0x7f;
+     return tmp_byte;
      break;
   default:
     return memory_ram[address];
@@ -73,6 +84,21 @@ byte memory_Read(word address) {
 // Write
 // ----------------------------------------------------------------------------
 void memory_Write(word address, byte data) {
+  if (cartridge_xm &&
+      ((address >= 0x0470 && address < 0x0480) ||
+      ((xm_pokey_enabled && (address >= 0x0450 && address < 0x0470)) ||
+      (xm_mem_enabled && (address >= 0x4000 && address < 0x8000))))) {
+    xm_Write(address, data);
+    return;
+  }
+
+  if (cartridge_pokey && (
+      (!cartridge_pokey450 && (address >= 0x4000 && address <= 0x400f)) ||
+      (cartridge_pokey450 && (address >= 0x0450 && address < 0x0470)))) {
+    pokey_SetRegister(
+      (cartridge_pokey450 ? 0x4000 + (address - 0x0450) : address), data);
+    return;
+  }
 
   if(!memory_rom[address]) {
     switch(address) {
@@ -82,8 +108,8 @@ void memory_Write(word address, byte data) {
         }
         break;
       case INPTCTRL:
-        if(data == 22 && cartridge_IsLoaded( )) { 
-          cartridge_Store( ); 
+        if(data == 22 && cartridge_IsLoaded( )) {
+          cartridge_Store( );
         }
         else if(data == 2 && bios_enabled) {
           bios_Store( );
@@ -168,7 +194,7 @@ void memory_Write(word address, byte data) {
 // ----------------------------------------------------------------------------
 // WriteROM
 // ----------------------------------------------------------------------------
-void memory_WriteROM(word address, word size, const byte* data) {
+void memory_WriteROM(word address, uint size, const byte* data) {
   if((address + size) <= MEMORY_SIZE && data != NULL) {
     for(uint index = 0; index < size; index++) {
       memory_ram[address + index] = data[index];
@@ -180,7 +206,7 @@ void memory_WriteROM(word address, word size, const byte* data) {
 // ----------------------------------------------------------------------------
 // ClearROM
 // ----------------------------------------------------------------------------
-void memory_ClearROM(word address, word size) {
+void memory_ClearROM(word address, uint size) {
   if((address + size) <= MEMORY_SIZE) {
     for(uint index = 0; index < size; index++) {
       memory_ram[address + index] = 0;

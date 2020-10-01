@@ -5,7 +5,7 @@
 //
 // ----------------------------------------------------------------------------
 // Copyright 2005 Greg Stanton
-// 
+//
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; either version 2 of the License, or
@@ -45,12 +45,12 @@ static byte maria_wmode;
 // ----------------------------------------------------------------------------
 // StoreCell
 // ----------------------------------------------------------------------------
-static void maria_StoreCell(byte data) {
+static inline void maria_StoreCell(byte data) {
   if(maria_horizontal < MARIA_LINERAM_SIZE) {
     if(data) {
       maria_lineRAM[maria_horizontal] = maria_palette | data;
     }
-    else { 
+    else {
       byte kmode = memory_ram[CTRL] & 4;
       if(kmode) {
         maria_lineRAM[maria_horizontal] = 0;
@@ -63,12 +63,12 @@ static void maria_StoreCell(byte data) {
 // ----------------------------------------------------------------------------
 // StoreCell
 // ----------------------------------------------------------------------------
-static void maria_StoreCell(byte high, byte low) {
+static inline void maria_StoreCell(byte high, byte low) {
   if(maria_horizontal < MARIA_LINERAM_SIZE) {
     if(low || high) {
       maria_lineRAM[maria_horizontal] = (maria_palette & 16) | high | low;
     }
-    else { 
+    else {
       byte kmode = memory_ram[CTRL] & 4;
       if(kmode) {
         maria_lineRAM[maria_horizontal] = 0;
@@ -81,7 +81,7 @@ static void maria_StoreCell(byte high, byte low) {
 // ----------------------------------------------------------------------------
 // IsHolyDMA
 // ----------------------------------------------------------------------------
-static bool maria_IsHolyDMA( ) {
+static inline bool maria_IsHolyDMA( ) {
   if(maria_pp.w > 32767) {
     if(maria_h16 && (maria_pp.w & 4096)) {
       return true;
@@ -96,7 +96,7 @@ static bool maria_IsHolyDMA( ) {
 // ----------------------------------------------------------------------------
 // GetColor
 // ----------------------------------------------------------------------------
-static byte maria_GetColor(byte data) {
+static inline byte maria_GetColor(byte data) {
   if(data & 3) {
     return memory_ram[BACKGRND + data];
   }
@@ -108,12 +108,15 @@ static byte maria_GetColor(byte data) {
 // ----------------------------------------------------------------------------
 // StoreGraphic
 // ----------------------------------------------------------------------------
-static void maria_StoreGraphic( ) {
+static inline void maria_StoreGraphic( ) {
   byte data = memory_ram[maria_pp.w];
   if(maria_wmode) {
     if(maria_IsHolyDMA( )) {
+#if 0 // Wii: disabled due to rendering in Kangaroo mode
       maria_StoreCell(0, 0);
       maria_StoreCell(0, 0);
+#endif
+      maria_horizontal+=2;
     }
     else {
       maria_StoreCell((data & 12), (data & 192) >> 6);
@@ -122,10 +125,13 @@ static void maria_StoreGraphic( ) {
   }
   else {
     if(maria_IsHolyDMA( )) {
+#if 0 // Wii: disabled due to rendering in Kangaroo mode
       maria_StoreCell(0);
       maria_StoreCell(0);
       maria_StoreCell(0);
       maria_StoreCell(0);
+#endif
+      maria_horizontal+=4;
     }
     else {
       maria_StoreCell((data & 192) >> 6);
@@ -140,9 +146,10 @@ static void maria_StoreGraphic( ) {
 // ----------------------------------------------------------------------------
 // WriteLineRAM
 // ----------------------------------------------------------------------------
-static void maria_WriteLineRAM(byte* buffer) {
+static inline void maria_WriteLineRAM(byte* buffer) {
   byte rmode = memory_ram[CTRL] & 3;
   if(rmode == 0) {
+    // 160A/B
     int pixel = 0;
     for(int index = 0; index < MARIA_LINERAM_SIZE; index += 4) {
       word color;
@@ -160,7 +167,8 @@ static void maria_WriteLineRAM(byte* buffer) {
       buffer[pixel++] = color;
     }
   }
-  else if(rmode == 2) { 
+  else if(rmode == 2) {
+    // 320B/D
     int pixel = 0;
     for(int index = 0; index < MARIA_LINERAM_SIZE; index += 4) {
       buffer[pixel++] = maria_GetColor((maria_lineRAM[index + 0] & 16) | ((maria_lineRAM[index + 0] & 8) >> 3) | ((maria_lineRAM[index + 0] & 2)));
@@ -174,6 +182,7 @@ static void maria_WriteLineRAM(byte* buffer) {
     }
   }
   else if(rmode == 3) {
+    // 320A/C
     int pixel = 0;
     for(int index = 0; index < MARIA_LINERAM_SIZE; index += 4) {
       buffer[pixel++] = maria_GetColor((maria_lineRAM[index + 0] & 30));
@@ -191,20 +200,20 @@ static void maria_WriteLineRAM(byte* buffer) {
 // ----------------------------------------------------------------------------
 // StoreLineRAM
 // ----------------------------------------------------------------------------
-static void maria_StoreLineRAM( ) {
+static inline void maria_StoreLineRAM( ) {
   for(int index = 0; index < MARIA_LINERAM_SIZE; index++) {
     maria_lineRAM[index] = 0;
   }
-  
+
   byte mode = memory_ram[maria_dp.w + 1];
   while(mode & 0x5f) {
     byte width;
     byte indirect = 0;
- 
+
     maria_pp.b.l = memory_ram[maria_dp.w];
     maria_pp.b.h = memory_ram[maria_dp.w + 2];
-    
-    if(mode & 31) { 
+
+    if(mode & 31) {
       maria_cycles += 8; // Maria cycles (Header 4 byte)
       maria_palette = (memory_ram[maria_dp.w + 1] & 224) >> 3;
       maria_horizontal = memory_ram[maria_dp.w + 3];
@@ -212,7 +221,7 @@ static void maria_StoreLineRAM( ) {
       width = ((~width) & 31) + 1;
       maria_dp.w += 4;
     }
-    else { 
+    else {
       maria_cycles += 12; // Maria cycles (Header 5 byte)
       maria_palette = (memory_ram[maria_dp.w + 3] & 224) >> 3;
       maria_horizontal = memory_ram[maria_dp.w + 4];
@@ -237,7 +246,6 @@ static void maria_StoreLineRAM( ) {
         maria_cycles += 3; // Maria cycles (Indirect)
         maria_pp.b.l = memory_ram[basePP.w++];
         maria_pp.b.h = memory_ram[CHARBASE] + maria_offset;
-        
         maria_cycles += 3; // Maria cycles (Indirect, 1 byte)
         maria_StoreGraphic( );
         if(cwidth) {
@@ -280,10 +288,10 @@ uint maria_RenderScanline( ) {
   // lightgun flash
   // Displays the background color when Maria is disabled (if applicable)
   if( ( ( memory_ram[CTRL] & 96 ) != 64 ) &&
-      maria_scanline >= maria_visibleArea.top && 
+      maria_scanline >= maria_visibleArea.top &&
       maria_scanline <= maria_visibleArea.bottom ) {
       byte bgcolor = maria_GetColor(0);
-      byte *bgstart = maria_surface + ((maria_scanline - maria_displayArea.top) * maria_displayArea.GetLength());      
+      byte *bgstart = maria_surface + ((maria_scanline - maria_displayArea.top) * maria_displayArea.GetLength());
       for(uint index = 0; index < MARIA_LINERAM_SIZE; index++ ) {
         *bgstart++ = bgcolor;
         *bgstart++ = bgcolor;
@@ -329,7 +337,7 @@ uint maria_RenderScanline( ) {
       {
         maria_cycles += 4; // Maria cycles (Other lines of zone)
       }
-    }    
+    }
   }
   return maria_cycles;
 }

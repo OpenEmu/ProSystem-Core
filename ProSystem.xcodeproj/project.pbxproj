@@ -36,6 +36,7 @@
 
 /* Begin PBXBuildFile section */
 		82EC409F0FD9EC420017FC19 /* libz.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 82EC409E0FD9EC420017FC19 /* libz.dylib */; };
+		871EC9A224F08BF700CEC578 /* ExpansionModule.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 871EC9A124F08BF600CEC578 /* ExpansionModule.cpp */; };
 		8794D9691B74713300897F57 /* Sound.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 941F59AF17A6189D0005D7EA /* Sound.cpp */; };
 		8D5B49B0048680CD000E48DA /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 089C167DFE841241C02AAC07 /* InfoPlist.strings */; };
 		8D5B49B4048680CD000E48DA /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7ADFEA557BF11CA2CBB /* Cocoa.framework */; };
@@ -98,6 +99,8 @@
 		089C167FFE841241C02AAC07 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
 		1058C7ADFEA557BF11CA2CBB /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		82EC409E0FD9EC420017FC19 /* libz.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libz.dylib; path = usr/lib/libz.dylib; sourceTree = SDKROOT; };
+		871EC9A024F08BF600CEC578 /* ExpansionModule.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ExpansionModule.h; sourceTree = "<group>"; };
+		871EC9A124F08BF600CEC578 /* ExpansionModule.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ExpansionModule.cpp; sourceTree = "<group>"; };
 		8D5B49B6048680CD000E48DA /* ProSystem.oecoreplugin */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ProSystem.oecoreplugin; sourceTree = BUILT_PRODUCTS_DIR; };
 		8D5B49B7048680CD000E48DA /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		941DFB2615B6425200C6552F /* ProSystemGameCore.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = ProSystemGameCore.mm; sourceTree = "<group>"; };
@@ -269,6 +272,8 @@
 				941F598917A6189D0005D7EA /* Database.cpp */,
 				941F598A17A6189D0005D7EA /* Database.h */,
 				941F598B17A6189D0005D7EA /* Equates.h */,
+				871EC9A124F08BF600CEC578 /* ExpansionModule.cpp */,
+				871EC9A024F08BF600CEC578 /* ExpansionModule.h */,
 				941F598C17A6189D0005D7EA /* Hash.cpp */,
 				941F598D17A6189D0005D7EA /* Hash.h */,
 				941F598E17A6189D0005D7EA /* lib */,
@@ -453,6 +458,7 @@
 				941F59CD17A6189D0005D7EA /* Pokey.cpp in Sources */,
 				941F59CE17A6189D0005D7EA /* ProSystem.cpp in Sources */,
 				941F59CF17A6189D0005D7EA /* Region.cpp in Sources */,
+				871EC9A224F08BF700CEC578 /* ExpansionModule.cpp in Sources */,
 				941F59D017A6189D0005D7EA /* Riot.cpp in Sources */,
 				941F59D117A6189D0005D7EA /* Sally.cpp in Sources */,
 				941F59D317A6189D0005D7EA /* Tia.cpp in Sources */,
