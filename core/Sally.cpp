@@ -64,11 +64,11 @@ static const Vector SALLY_NMI = {65531, 65530};
 static const Vector SALLY_IRQ = {65535, 65534}; 
 
 static const byte SALLY_CYCLES[256] = {
-	7,6,0,0,0,3,5,0,3,2,2,0,0,4,6,0,
+	7,6,0,0,0,3,5,0,3,2,2,2,0,4,6,0,
 	2,5,0,0,0,4,6,0,2,4,0,0,0,4,7,0,
-	6,6,0,0,3,3,5,0,4,2,2,0,4,4,6,0,
+	6,6,0,0,3,3,5,0,4,2,2,2,4,4,6,0,
 	2,5,0,0,0,4,6,0,2,4,0,0,0,4,7,0,
-	6,6,0,0,0,3,5,0,3,2,2,0,3,4,6,0,
+	6,6,0,0,0,3,5,0,3,2,2,2,3,4,6,0,
 	2,5,0,0,0,4,6,0,2,4,0,0,0,4,7,0,
 	6,6,0,0,0,3,5,0,4,2,2,0,5,4,6,0,
 	2,5,0,0,0,4,6,0,2,4,0,0,0,4,7,0,
@@ -1704,6 +1704,26 @@ uint sally_ExecuteInstruction( ) {
       sally_AbsoluteX( ); 
       sally_INC( ); 
       break;
+
+    case 0x4b: // ALR (ASR)
+      sally_Immediate();
+      sally_AND();
+      sally_LSRA();
+      break;
+
+    case 0x0b: // ANC
+    case 0x2b: { // ANC
+      sally_Immediate();
+      sally_AND();
+      if (sally_a & 128) {
+        sally_p |= SALLY_FLAG.C;
+      }
+      else {
+        //sally_p &= ~SALLY_FLAG.C;
+        sally_p = (sally_p & ~SALLY_FLAG.C) & 0xFF;
+      }
+      break;
+    }
 
     default:
       break;
