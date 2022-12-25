@@ -17,7 +17,7 @@
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>1.4.2</string>
+	<string>1.5.1</string>
 	<key>NSPrincipalClass</key>
 	<string>OEGameCoreController</string>
 	<key>OEGameCoreClass</key>
@@ -37,7 +37,7 @@
 	<key>OEGameCorePlayerCount</key>
 	<string>2</string>
 	<key>OEProjectURL</key>
-	<string>http://home.comcast.net/~gscottstanton/</string>
+	<string>https://gitlab.com/jgemu/prosystem</string>
 	<key>OESystemIdentifiers</key>
 	<array>
 		<string>openemu.system.7800</string>
