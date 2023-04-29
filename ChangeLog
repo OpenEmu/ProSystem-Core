@@ -1,3 +1,7 @@
+Version 1.5.2
+-------------
+ - Fix potential buffer overflow in MD5 digest conversion to string
+
 Version 1.5.1
 -------------
  - C Standards compliance improvements
