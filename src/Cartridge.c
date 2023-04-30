@@ -201,6 +201,16 @@ static void cartridge_ReadHeader(const uint8_t* header) {
     }
 }
 
+// Convert a nybble's hexadecimal representation to a lower case ASCII char
+static inline char nyb_hexchar(unsigned nyb) {
+    nyb &= 0xf; // Lower nybble only
+    if (nyb >= 10)
+        nyb += 'a' - 10;
+    else
+        nyb += '0';
+    return (char)nyb;
+}
+
 bool cartridge_Load(const uint8_t* data, uint32_t size) {
     if (size <= 128) {
         // Cartridge data is invalid.
@@ -257,9 +267,16 @@ bool cartridge_Load(const uint8_t* data, uint32_t size) {
     MD5_Init(&c);
     MD5_Update(&c, dataptr, md5len);
     MD5_Final(digest, &c);
-    for (int i = 0; i < 16; i++) {
+    /*for (int i = 0; i < 16; i++) {
         snprintf(&(cart_digest[i * 2]), 16 * 2, "%02x", (unsigned)digest[i]);
+    }*/
+
+    // Convert the digest to a string without dodgy calls to snprintf
+    for (int i = 0; i < 16; ++i) {
+        cart_digest[i * 2] = nyb_hexchar(digest[i] >> 4);
+        cart_digest[(i * 2) + 1] = nyb_hexchar(digest[i]);
     }
+    cart_digest[32] = '\0';
     
     return true;
 }
